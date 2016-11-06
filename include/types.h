@@ -12,14 +12,14 @@ struct seeder {
 };
 */
 
-
+/*
 struct seed {
     struct seeder seeder;
     struct seeder* next;
 };
+*/
 
-
-typedef msg_type char;
+typedef char msg_type;
 
 
 // I think this struct needs to be packed
@@ -27,7 +27,7 @@ typedef msg_type char;
 struct msg {
     msg_type type;
     uint16_t length;
-    void data[];
+    void* data;
 };
     
 
