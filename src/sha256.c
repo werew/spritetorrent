@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <endian.h>
 #include "sha256.h"
 
 
@@ -23,7 +24,19 @@ static const uint32_t K[] = {
     0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2,
 };
 
-void sha256(void* data, size_t s){
+void main(){
+    char data1[] = "abc";
+    sha256(data1,3);
+
+    char data2[] = "this is just a test...It would be nice" 
+                   "to have a string much bigger than 512 "
+                   "bits, but I'm a bit lazy...oh wait, I "
+                   "just wrote 140 characters!";
+    sha256(data2,strlen(data2));
+    
+}
+
+void sha256(void* data, size_t size){
 
 
     uint32_t h[8] = { 
@@ -38,25 +51,50 @@ void sha256(void* data, size_t s){
     };
 
     /* 512-bits chunk */
-    char chunk[64];
+    unsigned char chunk[64];
 
-    
-    size_t s_left = s;
-    while (s_left >= 64) {
-        memcpy(chunk, data, 64);
-        sha256_proc(chunk, h);
-        s_left -= 64;
-    };
-
-    /* Add padding to the last chunk */
-    memset(chunk, 0, 64);
-    *(size_t*) (chunk + 64 - sizeof(size_t)) = s;
-    memcpy(chunk, data, s_left);
-    sha256_proc(chunk,h);
-
-    // At this point the digest is ready
    
-};
+    /* Compute hash for all the full 512-bits chunks */ 
+    size_t size_left = size;
+    while (size_left >= 64) {
+        memcpy(chunk, data+size-size_left, 64);
+        sha256_proc(chunk, h);
+        size_left -= 64;
+    }
+
+    /* Last chunk */
+    memcpy(chunk, data+size-size_left, size_left);
+
+    size_t size_chunk = size_left; // Better using a meaningfull name
+
+    /* Padding */
+
+    /* Append 1-bit */ 
+    chunk[size_chunk++] = 0x80;
+
+    /* Need at least 8 bytes of space */
+    if (size_chunk > 56){
+        /* Size is too big */
+        while (size_chunk < 64) chunk[size_chunk++] = 0x00;
+        sha256_proc(chunk,h);
+        
+        /* Use a new empty chunk */ 
+        size_chunk = 0;
+    } 
+
+    while(size_chunk < 56) chunk[size_chunk++] = 0x00;
+
+    /* Append 8-bytes full data size in bits */
+    //XXX htobe64 is not a standard function
+    *(uint64_t*) (chunk + 56) = htobe64((uint64_t) size * 8);
+
+    sha256_proc(chunk,h);
+    
+    // At this point the digest should be ready (TODO translate to big endian)
+    puts("HASH:");
+    printf("%x %x %x %x %x %x %x %x\n",h[0],h[1],h[2],h[3],h[4],h[5],h[6],h[7]);
+   
+}
 
 
 void sha256_proc(void* chk, uint32_t* ph){
@@ -68,17 +106,21 @@ void sha256_proc(void* chk, uint32_t* ph){
 
 
     /* Init variables with previous hash values */    
-    a = ph[0]; b = ph[1]; c = ph[2]; d = ph[3];
-    e = ph[4]; f = ph[5]; g = ph[6]; h = ph[7];
+    a = ph[0]; b = ph[1]; 
+    c = ph[2]; d = ph[3];
+    e = ph[4]; f = ph[5]; 
+    g = ph[6]; h = ph[7];
 
 
     /* Prepare the message schedule */
-    for (i=0; i<16; i++) w[i] = m[i];
-    for (; i<64; i++) w[i] = SSIG1(w[i-2]) + w[i-7] + SSIG0(w[i-15]) + w[i-16];
+    for (i=0; i<16; i++) 
+        w[i] = htobe32(m[i]);
 
+    for (i=16; i<64; i++) 
+        w[i] = SSIG1(w[i-2]) + w[i-7] + SSIG0(w[i-15]) + w[i-16];
 
     /* Compression loop */
-    for (i=0; i<63; i++){
+    for (i=0; i<64; i++){
         uint32_t t1 =  h + SIG1(e) + CH(e,f,g) + K[i] + w[i];
         uint32_t t2 =  SIG0(a) + MAJ(a,b,c);
 
@@ -93,11 +135,12 @@ void sha256_proc(void* chk, uint32_t* ph){
     }
 
     /* Compute next hash values */
-    ph[0] = a + ph[0]; ph[1] = b + ph[1];
-    ph[2] = c + ph[2]; ph[3] = d + ph[3];
-    ph[4] = e + ph[4]; ph[5] = f + ph[5];
-    ph[6] = g + ph[6]; ph[7] = h + ph[7];
-};
+    ph[0] += a; ph[1] += b;
+    ph[2] += c; ph[3] += d;
+    ph[4] += e; ph[5] += f;
+    ph[6] += g; ph[7] += h;
+
+}
 
 
     
