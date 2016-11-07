@@ -21,13 +21,17 @@ struct seed {
 
 typedef char msg_type;
 
-
-// I think this struct needs to be packed
-// or we should use bitfields: http://www.catb.org/esr/structure-packing/
+/**
+ * This struct is aligned on a 1-byte
+ * boundary so that it can be casted
+ * directly at the beginning of the 
+ * message
+ */
+#pragma pack(1)
 struct msg {
     msg_type type;
     uint16_t length;
-    void* data;
+    char data[];
 };
     
 
