@@ -13,6 +13,53 @@
 
 
 /**
+ * Allocates a struct msg of the good size
+ * @param max_length The maximum size of the
+ *        data that can be contained
+ * @return A pointer to the newly allocated
+ *        struct msg
+ */
+struct msg* create_msg(uint16_t max_length){
+    struct msg* msg = malloc(max_length+4);
+    return msg;
+}
+
+/**
+ * Drops a struct msg
+ * @param msg Pointer to the struct msg to drop
+ */
+void drop_msg(struct msg* msg){
+    free(msg);
+}
+
+/**
+ * Read the length of a message
+ * @param msg A pointer to the message
+ * @return The length of the message
+ */
+uint16_t msgget_length(struct msg* msg){
+    uint16_t length;
+
+    unsigned char* pl = (unsigned char*) length;
+    pl[0] = msg->_len0;
+    pl[1] = msg->_len1;
+
+    return length;
+}
+
+/**
+ * Set the length of a message
+ * @param msg A pointer to the message
+ * @param length The length to set
+ */
+void msgget_length(struct msg* msg, uint16_t length){
+    unsigned char* pl = (unsigned char*) length;
+    msg->_len0 = pl[0];
+    msg->_len1 = pl[1];
+}
+
+
+/**
  * Creates a socket and binds it to the given address
  * and port.
  * @param addr A string containing an IPv4 or IPv6

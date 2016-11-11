@@ -30,17 +30,17 @@ typedef char msg_type;
  */
 struct msg {
     msg_type type;
+    unsigned char _len0;
     unsigned char _len1;
-    unsigned char _len2;
     char data[];
 };
 
 
 struct msg* create_msg(uint16_t max_length);
-void drop_msg(struct msg* message);
+void drop_msg(struct msg* msg);
 
-void msgset_length(struct msg* message, uint16_t length);
-void msgget_length(struct msg* message, uint16_t length);
+void msgset_length(struct msg* msg, uint16_t length);
+uint16_t msgget_length(struct msg* msg);
 
 
 
