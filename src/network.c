@@ -31,7 +31,7 @@ int init_connection(char* addr, uint16_t port){
  	   of address (ipv4 or ipv6) */
 
 	//TODO verifying if AF_INET and AF_INET6 type is int
-	int ip_v;
+	int ip_v = AF_INET; 
 
 	//Création socket
 	if ((sockfd = socket(ip_v,SOCK_DGRAM,0)) == -1){
