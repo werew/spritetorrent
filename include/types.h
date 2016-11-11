@@ -22,22 +22,25 @@ struct seed {
 typedef char msg_type;
 
 /**
- * This struct is aligned on a 1-byte
- * boundary so that it can be casted
- * directly at the beginning of the 
- * message
+ * Only the fields type and data
+ * can accessed direclty by the user.
+ * To set and get the length the
+ * function msgset_length and
+ * msgget_length must be used.
  */
-#pragma pack(1)
 struct msg {
     msg_type type;
-    uint16_t length;
+    unsigned char _len1;
+    unsigned char _len2;
     char data[];
 };
-    
 
 
+struct msg* create_msg(uint16_t max_length);
+void drop_msg(struct msg* message);
 
-
+void msgset_length(struct msg* message, uint16_t length);
+void msgget_length(struct msg* message, uint16_t length);
 
 
 
