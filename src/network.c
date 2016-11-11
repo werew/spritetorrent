@@ -44,7 +44,7 @@ uint16_t msgget_length(struct msg* msg){
     pl[0] = msg->_len0;
     pl[1] = msg->_len1;
 
-    return length;
+    return ntohs(length);
 }
 
 /**
@@ -53,6 +53,7 @@ uint16_t msgget_length(struct msg* msg){
  * @param length The length to set
  */
 void msgset_length(struct msg* msg, uint16_t length){
+    length = htons(length);
     unsigned char* pl = (unsigned char*) &length;
     msg->_len0 = pl[0];
     msg->_len1 = pl[1];
