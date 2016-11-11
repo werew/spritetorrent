@@ -30,15 +30,18 @@ int init_connection(char* addr, uint16_t port){
 	/* TODO  AF_INET changes depending on the type
  	   of address (ipv4 or ipv6) */
 
+	//TODO verifying if AF_INET and AF_INET6 type is int
+	int ip_v;
+
 	//Création socket
-	if ((sockfd = socket(AF_INET,SOCK_DGRAM,0)) == -1){
+	if ((sockfd = socket(ip_v,SOCK_DGRAM,0)) == -1){
 		perror("Erreur socket tracker");
 		//TODO traitement de l'erreur
 	}
 
-	sockaddr.sin_family = AF_INET;
+	sockaddr.sin_family = ip_v;
 	sockaddr.sin_port   = htons(port);
-	sockaddr.sin_addr.s_addr = INADDR_ANY;
+	inet_pton(ip_v,addr,&sockaddr.sin_addr.s_addr)
 
 	//Configuration du socket
 	if (bind(sockfd,(struct sockaddr *)&sockaddr,
