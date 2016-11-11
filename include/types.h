@@ -1,6 +1,8 @@
 #ifndef _TYPES_H_
 #define _TYPES_H_
 
+#include "sha256.h"
+
 /******* Seeds and seeders ********/
 
 /* A cell of a list of seeders */
@@ -14,7 +16,7 @@ struct seeder {
 /* Associates an hash to a list of seeders */
 struct seed {
     struct seeder* seeders;      // List of seeders sharing the file
-    char[SHA256_HASH_SIZE] hash; // Hash of the file
+    char hash[SHA256_HASH_SIZE]; // Hash of the file
 };
 
 
@@ -59,6 +61,8 @@ void drop_msg(struct msg* msg);
 void msgset_length(struct msg* msg, uint16_t length);
 uint16_t msgget_length(struct msg* msg);
 
+struct seeder* create_seeder(struct sockaddr* addr, socklen_t length);
+void drop_seeder(struct seeder* s);
 
 
 
