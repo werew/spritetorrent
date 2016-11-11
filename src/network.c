@@ -114,3 +114,69 @@ int init_connection(char* addr, uint16_t port){
 
     return sockfd;
 }
+
+
+
+/**
+ * Create and use a connection for send a PUT, GET or KEEP ALIVE
+ * message to the tracker and receive its answer
+ * 
+ * @param addr_tracker: address to contact the tracker
+ * @param port_tracker: port to contact the tracker
+ * @param type: type of message send to the tracker
+ * @param hash: hash send the tracker
+ */
+struct msg* tracker_exchange(char* addr_tracker,int port_tracker,char* type, char* hash)
+{
+	//Determine the version of IP
+	int ip_v=ip_version(addr_tracker);
+
+	//Création du socket de communication avec le tracker
+	if((sockfd_tracker=socket(ip_v,SOCK_DGRAM,0))==-1)
+	{
+		//TODO traitement erreur
+	}
+
+	struct sockaddr_in sockaddr_tracker;
+
+	//Setting the sockaddr tracker
+	tracker.sin_family = ip_v;
+	tracker.sin_port = port_tracker;
+	inet_pton(ip_v,addr_tracker,&tracker.sin_addr.s_addr);
+
+	//Create message for the tracker
+	struct msg* tracker_msg=create_msg(1027);
+	//TODO mise du hash et du client
+	//TODO mise de la longueur
+
+	if(strcmp(type,"put")==0)
+	{
+		tracker_msg->type=PUT_T;
+	}
+	else if(strcmp(type,"get")==0)
+	{
+		tracker_msg->type=GET;
+	}
+	//TODO message keep alive
+	else
+	{
+		//TODO erreur, action incorrect
+	}
+
+	//Send message to the tracker
+	if(sendto(sockfd_tracker,tracker_msg,(msgget_length(msg)+3),(struct sockaddr*)&tracker,sizeof(sockaddr_in)) == -1)
+	{
+		//TODO erreur
+	}
+
+	//XXX boucle de recv si la liste ne tient pas en un message
+	//Wait the answer of the tracker
+	if(rcvfrom(sockfd_tracker,tracker_msg,1027,0,NULL,NULL) == -1)
+	{
+		//TODO erreur
+	}
+
+	close(sockfd_tracker);
+
+	return tracker_msg;
+}
