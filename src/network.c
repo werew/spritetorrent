@@ -88,7 +88,13 @@ int init_connection(char* addr, uint16_t port){
 
 	sockaddr.sin_family = ip_v;
 	sockaddr.sin_port   = htons(port);
-	inet_pton(ip_v,addr,&sockaddr.sin_addr.s_addr);
+
+	if(addr==NULL){
+		sockaddr.sin_addr.s_addr=INADDR_ANY
+	}else{
+		inet_pton(ip_v,addr,&sockaddr.sin_addr.s_addr)
+	}
+	
 
 	//Configuration du socket
 	if (bind(sockfd,(struct sockaddr *)&sockaddr,
