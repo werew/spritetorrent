@@ -1,23 +1,24 @@
 #ifndef _TYPES_H_
 #define _TYPES_H_
 
+/******* Seeds and seeders ********/
 
-
-/* TODO need to define the correct types
-   this will depend on the implementation
+/* A cell of a list of seeders */
 struct seeder {
-    addr;
-    port;
-    lastseen;
+    struct sockaddr* addr; // Net infos (addr, port, ...)
+    time_t lastseen;       // Last contact 
+    struct seeder* next;   // Next seeder of the list
 };
-*/
 
-/*
+
+/* Associates an hash to a list of seeders */
 struct seed {
-    struct seeder seeder;
-    struct seeder* next;
+    struct seeder* seeders;      // List of seeders sharing the file
+    char[SHA256_HASH_SIZE] hash; // Hash of the file
 };
-*/
+
+
+/*******     Messages     ********/
 
 /* Types */
 /* client <--> client */
