@@ -15,6 +15,37 @@
 // Max size of a msg
 #define MAX_MSG 1028
 
+/**
+ * Handle a received message
+ * @param msg A pointer to the received message
+ * @param src_addr A struct giving some infos 
+ *        about the sender
+ * @param addrlen The actual size of the struct 
+ *        pointed by src_addr
+ * @return 0 in case of success, -1 otherwise
+ */
+int handle_msg
+(struct msg* msg, struct sockaddr* src_addr, socklen_t addrlen){
+
+    // Create seeder
+    struct seeder* peer = create_seeder(src_addr,addrlen);
+    if (peer == NULL) return -1;
+    
+
+    //TODO complete
+    switch (msg->type){
+        case PUT_T: puts("PUT");
+            break;
+        case GET: puts("GET");
+            break;
+        case KEEP_ALIVE: puts("KEEP_ALIVE");
+            break;
+        default: puts("INVALID");
+    }
+    
+    return 0;
+}
+
 
 /**
  * Accept a message and deals with it
@@ -24,30 +55,31 @@
  */
 int accept_msg(int sockfd){
 
-    struct msg* msg = create_msg(MAX_MSG); //TODO check errors
-    struct sockaddr_in src_addr;
-    socklen_t addrlen;
-   
-    // Receive a msg  
+    struct sockaddr_storage src_addr;
+    socklen_t addrlen = sizeof src_addr;
+
+    // Receive a message
     ssize_t size_msg;
+    struct msg* msg = create_msg(MAX_MSG); 
+    if (msg == NULL) return -1;
     size_msg = recvfrom(sockfd, msg, MAX_MSG, 0, 
                    (struct sockaddr*) &src_addr, 
                    &addrlen);
-
-    uint16_t mlenght = msgget_length(msg);
-    // DEBUG 
-    printf("%d %c %d %s\n",size_msg,msg->type,mlenght,msg->data);
-
-    // Check for errors
     if (size_msg == -1) return -1;
 
     // Check valid length
+    uint16_t mlenght = msgget_length(msg);
     if (mlenght > size_msg) {
-        //XXX implement a little logging library
-        printf("Message dropped\n"); 
+        drop_msg(msg);
+        printf("Message dropped: bad length\n"); 
         return 0;
     }
-   
+
+    // Deal with the msg
+    if (handle_msg(msg, (struct sockaddr*) &src_addr, addrlen) == -1){
+        drop_msg(msg);
+        return -1;
+    }
 
     return 0;
 }
