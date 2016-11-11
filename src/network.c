@@ -17,7 +17,7 @@ int init_connection(char* addr, uint16_t port){
  	   of address (ipv4 or ipv6) */
 
 	//Création socket
-	if((sockfd = socket(AF_INET,SOCK_DGRAM,0)) == -1){
+	if ((sockfd = socket(AF_INET,SOCK_DGRAM,0)) == -1){
 		perror("Erreur socket tracker");
 		//TODO traitement de l'erreur
 	}
@@ -27,7 +27,11 @@ int init_connection(char* addr, uint16_t port){
 	sockaddr.sin_addr.s_addr = INADDR_ANY;
 
 	//Configuration du socket
-	if(bind(sockfd,(struct sockaddr *)&sockaddr,sizeof(struct sockaddr_in)) == -1){
+	if (bind(sockfd,(struct sockaddr *)&sockaddr,
+             sizeof(struct sockaddr_in)) == -1){
+        perror("bind");
 		//TODO traitement de l'erreur
 	}
+
+    return sockfd;
 }
