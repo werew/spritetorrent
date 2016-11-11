@@ -40,7 +40,7 @@ void drop_msg(struct msg* msg){
 uint16_t msgget_length(struct msg* msg){
     uint16_t length;
 
-    unsigned char* pl = (unsigned char*) length;
+    unsigned char* pl = (unsigned char*) &length;
     pl[0] = msg->_len0;
     pl[1] = msg->_len1;
 
@@ -52,8 +52,8 @@ uint16_t msgget_length(struct msg* msg){
  * @param msg A pointer to the message
  * @param length The length to set
  */
-void msgget_length(struct msg* msg, uint16_t length){
-    unsigned char* pl = (unsigned char*) length;
+void msgset_length(struct msg* msg, uint16_t length){
+    unsigned char* pl = (unsigned char*) &length;
     msg->_len0 = pl[0];
     msg->_len1 = pl[1];
 }
@@ -90,9 +90,9 @@ int init_connection(char* addr, uint16_t port){
 	sockaddr.sin_port   = htons(port);
 
 	if(addr==NULL){
-		sockaddr.sin_addr.s_addr=INADDR_ANY
+		sockaddr.sin_addr.s_addr=INADDR_ANY;
 	}else{
-		inet_pton(ip_v,addr,&sockaddr.sin_addr.s_addr)
+		inet_pton(ip_v,addr,&sockaddr.sin_addr.s_addr);
 	}
 	
 
