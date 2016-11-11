@@ -11,6 +11,18 @@
 #include <string.h>
 #include "../include/types.h"
 
+/**
+ * Determine the using version of IP adress
+ * passing in argument
+ * @param addr: Address to determine the IP version
+ * @return AF_INET or AF_INET6
+ */
+
+int ip_version(char* addr)
+{
+	//TODO faire fonction
+}
+
 
 /**
  * Allocates a struct msg of the good size
@@ -75,11 +87,7 @@ int init_connection(char* addr, uint16_t port){
 	int sockfd;
 	struct sockaddr_in sockaddr;
 
-	/* TODO  AF_INET changes depending on the type
- 	   of address (ipv4 or ipv6) */
-
-	//TODO verifying if AF_INET and AF_INET6 type is int
-	int ip_v = AF_INET; 
+	int ip_v=ip_version(addr);
 
 	//Création socket
 	if ((sockfd = socket(ip_v,SOCK_DGRAM,0)) == -1){
