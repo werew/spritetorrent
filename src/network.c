@@ -31,7 +31,7 @@ int init_connection(char* addr, uint16_t port){
  	   of address (ipv4 or ipv6) */
 
 	//TODO verifying if AF_INET and AF_INET6 type is int
-	int ip_v;
+	int ip_v = AF_INET; 
 
 	//Création socket
 	if ((sockfd = socket(ip_v,SOCK_DGRAM,0)) == -1){
@@ -41,7 +41,7 @@ int init_connection(char* addr, uint16_t port){
 
 	sockaddr.sin_family = ip_v;
 	sockaddr.sin_port   = htons(port);
-	inet_pton(ip_v,addr,&sockaddr.sin_addr.s_addr)
+	inet_pton(ip_v,addr,&sockaddr.sin_addr.s_addr);
 
 	//Configuration du socket
 	if (bind(sockfd,(struct sockaddr *)&sockaddr,
