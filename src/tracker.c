@@ -24,17 +24,32 @@
  */
 int accept_msg(int sockfd){
 
-    struct msg* msg = malloc(MAX_MSG);
+    struct msg* msg = create_msg(MAX_MSG); //TODO check errors
     struct sockaddr_in src_addr;
     socklen_t addrlen;
    
     // Receive a msg  
-    // TODO test for errors
-    recvfrom(sockfd, msg, MAX_MSG, 0, 
-             (struct sockaddr*) &src_addr, &addrlen);
+    ssize_t size_msg;
+    size_msg = recvfrom(sockfd, msg, MAX_MSG, 0, 
+                   (struct sockaddr*) &src_addr, 
+                   &addrlen);
 
-    // TODO deal with the content of the msg
+    uint16_t mlenght = msgget_length(msg);
+    // DEBUG 
+    printf("%d %c %d %s\n",size_msg,msg->type,mlenght,msg->data);
 
+    // Check for errors
+    if (size_msg == -1) return -1;
+
+    // Check valid length
+    if (mlenght > size_msg) {
+        //XXX implement a little logging library
+        printf("Message dropped\n"); 
+        return 0;
+    }
+   
+
+    return 0;
 }
 
 int main(int argc, char* argv[]){
@@ -44,6 +59,6 @@ int main(int argc, char* argv[]){
 
     accept_msg(sockfd);
 
-    
     return 0;
 }
+
