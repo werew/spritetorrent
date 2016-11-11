@@ -19,6 +19,22 @@ struct seed {
 };
 */
 
+/* Types */
+/* client <--> client */
+#define PUT_C           100
+#define REP_PUT         101
+#define LIST            102
+#define REP_LIST        103
+/* client <--> tracker */
+#define PUT_T           110 
+#define ACK_PUT         111
+#define GET             112
+#define ACK_GET         113
+#define KEEP_ALIVE      114
+#define ACK_KEEP_ALIVE  115
+/* debug */
+#define PRINT           150
+
 typedef char msg_type;
 
 /**
