@@ -11,7 +11,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
-#include "../include/types.h"
+#include "types.h"
+#include "network.h"
 
 
 int main(int argc, char* argv)
@@ -23,7 +24,9 @@ int main(int argc, char* argv)
 
 	int sockfd_tracker,sockfd_peer;
 
+	//Initialisation du socket d'écoute des peer
 	sockfd_peer=init_connection(NULL,argv[3]);
+	printf("Socket peer créé\n");
 
 	return 0;
 }
