@@ -1,4 +1,16 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <inttypes.h>
 #include <arpa/inet.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+#include "../include/types.h"
+
 
 /**
  * Creates a socket and binds it to the given address
@@ -22,7 +34,7 @@ int init_connection(char* addr, uint16_t port){
 	int ip_v;
 
 	//Création socket
-	if((sockfd = socket(ip_v,SOCK_DGRAM,0)) == -1){
+	if ((sockfd = socket(ip_v,SOCK_DGRAM,0)) == -1){
 		perror("Erreur socket tracker");
 		//TODO traitement de l'erreur
 	}
@@ -32,7 +44,11 @@ int init_connection(char* addr, uint16_t port){
 	inet_pton(ip_v,addr,&sockaddr.sin_addr.s_addr)
 
 	//Configuration du socket
-	if(bind(sockfd,(struct sockaddr *)&sockaddr,sizeof(struct sockaddr_in)) == -1){
+	if (bind(sockfd,(struct sockaddr *)&sockaddr,
+             sizeof(struct sockaddr_in)) == -1){
+        perror("bind");
 		//TODO traitement de l'erreur
 	}
+
+    return sockfd;
 }
