@@ -16,6 +16,14 @@
 
 int main(int argc, char* argv)
 {
-	
+	if(argc!=6){
+		printf("Usage: %s tracker_addr tracker_port listen_port action hash",argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
+	int sockfd_tracker,sockfd_peer;
+
+	sockfd_peer=init_connection(NULL,argv[3]);
+
 	return 0;
 }
