@@ -29,31 +29,31 @@ int ip_version(char* addr)
  * Accept a message and deals with it
  * @param sockfd A socket file descriptor
  *        from where receive the message
- * @return a pointer to a struct acpt_msg or 
+ * @return a pointer to a struct msg or 
  *         NULL in case of error
  */
-struct acpt_msg* accept_msg(int sockfd){
+struct msg* accept_msg(int sockfd){
 
-    struct acpt_msg* am = malloc(sizeof (struct acpt_msg)); 
-    if (am == NULL) return NULL;
+    struct msg* m = malloc(sizeof (struct msg)); 
+    if (m == NULL) return NULL;
 
-    am->msg = create_msg(MAX_MSG); 
-    if (am->msg == NULL) goto error_1;
+    m->tlv = create_tlv(MAX_LEN_TLV); 
+    if (m->tlv == NULL) goto error_1;
 
 
     // Receive a message
-    am->addrlen = sizeof am->addrlen;
-    am->size = recvfrom(sockfd, am->msg, MAX_MSG, 0, 
-                   (struct sockaddr*) &(am->src_addr),
-                   &(am->addrlen));
-    if (am->size == -1) goto error_2;
+    m->addrlen = sizeof m->addrlen;
+    m->size = recvfrom(sockfd, m->tlv, MAX_LEN_TLV, 0, 
+                   (struct sockaddr*) &(m->addr),
+                   &(m->addrlen));
+    if (m->size == -1) goto error_2;
 
-    return am;
+    return m;
 
 error_2:
-    drop_msg(am->msg);
+    drop_tlv(m->tlv);
 error_1:
-    free(am);
+    free(m);
     return NULL;
 }
 
@@ -64,22 +64,22 @@ error_1:
  * @return A pointer to the newly allocated
  *        struct msg
  */
-struct msg* create_msg(uint16_t max_length){
-    struct msg* msg = malloc(max_length+4);
-    return msg;
+struct tlv* create_tlv(uint16_t max_length){
+    struct tlv* tlv = malloc(max_length+4);
+    return tlv;
 }
 
 /**
  * Drops a struct msg
  * @param msg Pointer to the struct msg to drop
  */
-void drop_msg(struct msg* msg){
-    free(msg);
+void drop_tlv(struct tlv* tlv){
+    free(tlv);
 }
 
-void drop_acpt_msg(struct acpt_msg* am){
-    drop_msg(am->msg);
-    free(am);
+void drop_msg(struct msg* m){
+    drop_tlv(m->tlv);
+    free(m);
 }
 
 /**
@@ -87,12 +87,12 @@ void drop_acpt_msg(struct acpt_msg* am){
  * @param msg A pointer to the message
  * @return The length of the message
  */
-uint16_t msgget_length(struct msg* msg){
+uint16_t tlvget_length(const struct tlv* tlv){
     uint16_t length;
 
     unsigned char* pl = (unsigned char*) &length;
-    pl[0] = msg->_len0;
-    pl[1] = msg->_len1;
+    pl[0] = tlv->_len0;
+    pl[1] = tlv->_len1;
 
     return ntohs(length);
 }
@@ -102,11 +102,11 @@ uint16_t msgget_length(struct msg* msg){
  * @param msg A pointer to the message
  * @param length The length to set
  */
-void msgset_length(struct msg* msg, uint16_t length){
+void tlvset_length(struct tlv* tlv, uint16_t length){
     length = htons(length);
     unsigned char* pl = (unsigned char*) &length;
-    msg->_len0 = pl[0];
-    msg->_len1 = pl[1];
+    tlv->_len0 = pl[0];
+    tlv->_len1 = pl[1];
 }
 
 /**

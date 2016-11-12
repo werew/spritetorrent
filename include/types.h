@@ -1,28 +1,10 @@
 #ifndef _TYPES_H_
 #define _TYPES_H_
 
-#include "sha256.h"
-
-/******* Seeds and seeders ********/
-
-/* A cell of a list of seeders */
-struct seeder {
-    struct sockaddr* addr; // Net infos (addr, port, ...)
-    time_t lastseen;       // Last contact 
-    struct seeder* next;   // Next seeder of the list
-};
 
 
-/* Associates an hash to a list of seeders */
-struct seed {
-    struct seeder* seeders;      // List of seeders sharing the file
-    char hash[SHA256_HASH_SIZE]; // Hash of the file
-};
+/***** Types ******/
 
-
-/*******     Messages     ********/
-
-/* Types */
 /* client <--> client */
 #define PUT_C           100
 #define REP_PUT         101
@@ -38,10 +20,9 @@ struct seed {
 /* debug */
 #define PRINT           150
 
-// Max size of a msg
-#define MAX_MSG 1028
+// Max size of the length of a struct tlv
+#define MAX_LEN_TLV 1028
 
-typedef char msg_type;
 
 /**
  * Only the fields type and data
@@ -50,36 +31,35 @@ typedef char msg_type;
  * function msgset_length and
  * msgget_length must be used.
  */
-struct msg {
-    msg_type type;
+struct tlv {
+    char type;
     unsigned char _len0;
     unsigned char _len1;
     char data[];
 };
 
+
 /**
  * This struct is used as
  * return value of accept_msg
  */
-struct acpt_msg {
-    struct msg* msg;            // received msg
-    ssize_t size;               // sie of the msg
+struct msg {
+    struct tlv* tlv;            // received msg
+    ssize_t size;               // size of the data read
     socklen_t addrlen;          // size of the addr
-    struct sockaddr_storage src_addr;   // addr of the sender
+    struct sockaddr_storage addr;   // addr of the sender
 };
 
 
+
+struct tlv* create_tlv(uint16_t max_length);
+void drop_tlv(struct tlv* tlv);
+
 struct msg* create_msg(uint16_t max_length);
-void drop_msg(struct msg* msg);
-void drop_acpt_msg(struct acpt_msg* am);
+void drop_msg(struct msg* m);
 
-void msgset_length(struct msg* msg, uint16_t length);
-uint16_t msgget_length(struct msg* msg);
-
-struct seeder* create_seeder(struct sockaddr* addr, socklen_t length);
-void drop_seeder(struct seeder* s);
-
-
+void tlvset_length(struct tlv* tlv, uint16_t length);
+uint16_t tlvget_length(const struct tlv* tlv);
 
 
 #endif
