@@ -23,7 +23,7 @@
  * @param type: type of message send to the tracker
  * @param hash: hash send the tracker
  */
-struct msg* tracker_exchange(char* addr_tracker,int port_tracker,char* type, char* hash)
+struct acpt_msg* tracker_exchange(char* addr_tracker,int port_tracker,char* type, char* hash)
 {
 
 	int sockfd_tracker;
@@ -70,16 +70,16 @@ struct msg* tracker_exchange(char* addr_tracker,int port_tracker,char* type, cha
 		//TODO erreur
 	}
 
+	drop_msg(tracker_msg);
+
 	//XXX boucle de recv si la liste ne tient pas en un message
 	//Wait the answer of the tracker
-	if(rcvfrom(sockfd_tracker,tracker_msg,1027,0,NULL,NULL) == -1)
-	{
-		//TODO erreur
-	}
+
+	struct acpt_msg tracker_answer = accept_msg(sockfd_tracker);
 
 	close(sockfd_tracker);
 
-	return tracker_msg;
+	return tracker_answer;
 }
 
 
