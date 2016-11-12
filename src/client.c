@@ -69,13 +69,17 @@ struct acpt_msg* tracker_exchange(char* addr_tracker,int port_tracker,char* type
 	{
 		//TODO erreur
 	}
+	else
+	{
+		printf("%s %s to %s port %d",type,hash,addr_tracker,port_tracker);
+	}
 
 	drop_msg(tracker_msg);
 
 	//XXX boucle de recv si la liste ne tient pas en un message
 	//Wait the answer of the tracker
 
-	struct acpt_msg tracker_answer = accept_msg(sockfd_tracker);
+	struct acpt_msg* tracker_answer = accept_msg(sockfd_tracker);
 
 	close(sockfd_tracker);
 
@@ -83,14 +87,13 @@ struct acpt_msg* tracker_exchange(char* addr_tracker,int port_tracker,char* type
 }
 
 
-void put_execution(int sockfd_listen_peer, struct acpt_msg tracker_answer)
+void put_execution(int sockfd_listen_peer, struct acpt_msg* tracker_answer)
 {
-	
 }
 
 
 
-int main(int argc, char* argv)
+int main(int argc, char** argv)
 {
 	if(argc!=6){
 		printf("Usage: %s tracker_addr tracker_port listen_port action hash",argv[0]);
@@ -100,13 +103,14 @@ int main(int argc, char* argv)
 	int sockfd_peer;
 
 	//Initialisation du socket d'écoute des peer
-	sockfd_peer=init_connection(NULL,argv[3]);
+	sockfd_peer=init_connection(NULL,atoi(argv[3]));
 	printf("Socket peer créé\n");
 
-	struct acpt_msg tracker_anwser=tracker_exchange(argv[1],atoi(argv[2]),argv[4],argv[5]);
+	struct acpt_msg* tracker_answer=tracker_exchange(argv[1],atoi(argv[2]),argv[4],argv[5]);
 
 	if(strcmp(argv[4],"PUT"))
 	{
+		printf("Listenning on port %s",argv[3]);
 		put_execution(sockfd_peer,tracker_answer);
 	}
 	else if(strcmp(argv[4],"GET"))
