@@ -64,8 +64,8 @@ struct msg {
 struct acpt_msg {
     struct msg* msg;            // received msg
     ssize_t size;               // sie of the msg
-    struct sockaddr* addr_src;  // addr of the sender
     socklen_t addrlen;          // size of the addr
+    struct sockaddr_storage src_addr;   // addr of the sender
 };
 
 
