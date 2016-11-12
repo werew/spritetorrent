@@ -71,7 +71,7 @@ struct acpt_msg* tracker_exchange(char* addr_tracker,int port_tracker,char* type
 	}
 	else
 	{
-		printf("%s %s to %s port %d",type,hash,addr_tracker,port_tracker);
+		printf("%s %s to %s port %d",type,hash,addr_tracker,port_tracker);	//XXX
 	}
 
 	drop_msg(tracker_msg);
@@ -87,10 +87,24 @@ struct acpt_msg* tracker_exchange(char* addr_tracker,int port_tracker,char* type
 }
 
 
+/**
+ * Execution when client put a hash
+ * @param sockfd_listen_peer: socket where client listen entering connection with an other client
+ * @param tracker_answer: answer of tracker after the client has declare put hash
+ */
 void put_execution(int sockfd_listen_peer, struct acpt_msg* tracker_answer)
 {
+	//TODO
 }
 
+/**
+ * Execution when client get hash
+ * @param tracker_answer: anwser of tracker after the client has declare get hash
+ */
+void get_execution(struct acpt_msg* tracker_answer)
+{
+	//TODO
+}
 
 
 int main(int argc, char** argv)
@@ -106,11 +120,14 @@ int main(int argc, char** argv)
 	sockfd_peer=init_connection(NULL,atoi(argv[3]));
 	printf("Socket peer créé\n");
 
+	//Communicate with tracker ans return its answer
 	struct acpt_msg* tracker_answer=tracker_exchange(argv[1],atoi(argv[2]),argv[4],argv[5]);
 
+
+	//Choose different execution depending if client put or get hash
 	if(strcmp(argv[4],"PUT"))
 	{
-		printf("Listenning on port %s",argv[3]);
+		printf("Listenning on port %s",argv[3]);	//XXX
 		put_execution(sockfd_peer,tracker_answer);
 	}
 	else if(strcmp(argv[4],"GET"))
