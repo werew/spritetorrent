@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "../include/types.h"
+#include "../include/network.h"
 
 /**
  * Determine the using version of IP adress
@@ -21,8 +22,40 @@
 int ip_version(char* addr)
 {
 	//TODO faire fonction
+    return AF_INET; // XXX just not to break the program
 }
 
+/**
+ * Accept a message and deals with it
+ * @param sockfd A socket file descriptor
+ *        from where receive the message
+ * @return a pointer to a struct acpt_msg or 
+ *         NULL in case of error
+ */
+struct acpt_msg* accept_msg(int sockfd){
+
+    struct acpt_msg* am = malloc(sizeof (struct acpt_msg)); 
+    if (am == NULL) return NULL;
+
+    struct msg* msg = create_msg(MAX_MSG); 
+    if (msg == NULL) goto error_1;
+
+
+    // Receive a message
+    am->addrlen = sizeof am->addrlen;
+    am->size = recvfrom(sockfd, am->msg, MAX_MSG, 0, 
+                   (struct sockaddr*) &(am->src_addr),
+                   &(am->addrlen));
+    if (am->size == -1) goto error_2;
+
+    return am;
+
+error_2:
+    drop_msg(am->msg);
+error_1:
+    free(am);
+    return NULL;
+}
 
 /**
  * Allocates a struct msg of the good size
