@@ -37,8 +37,8 @@ struct acpt_msg* accept_msg(int sockfd){
     struct acpt_msg* am = malloc(sizeof (struct acpt_msg)); 
     if (am == NULL) return NULL;
 
-    struct msg* msg = create_msg(MAX_MSG); 
-    if (msg == NULL) goto error_1;
+    am->msg = create_msg(MAX_MSG); 
+    if (am->msg == NULL) goto error_1;
 
 
     // Receive a message
@@ -75,6 +75,11 @@ struct msg* create_msg(uint16_t max_length){
  */
 void drop_msg(struct msg* msg){
     free(msg);
+}
+
+void drop_acpt_msg(struct acpt_msg* am){
+    drop_msg(am->msg);
+    free(am);
 }
 
 /**
