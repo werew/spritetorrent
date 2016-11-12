@@ -71,6 +71,7 @@ struct acpt_msg {
 
 struct msg* create_msg(uint16_t max_length);
 void drop_msg(struct msg* msg);
+void drop_acpt_msg(struct acpt_msg* am);
 
 void msgset_length(struct msg* msg, uint16_t length);
 uint16_t msgget_length(struct msg* msg);
