@@ -11,9 +11,8 @@
 #include <unistd.h>
 #include <string.h>
 #include "../include/types.h"
+#include "../include/network.h"
 
-// Max size of a msg
-#define MAX_MSG 1028
 
 /**
  * Handle a received message
@@ -26,7 +25,17 @@
  */
 int handle_msg
 (struct msg* msg, struct sockaddr* src_addr, socklen_t addrlen){
+/*
+    // Check valid length
+    uint16_t mlenght = msgget_length(msg);
+    if (mlenght > size_msg) {
+        drop_msg(msg);
+        printf("Message dropped: bad length\n"); 
+        return 0;
+    }
 
+*/
+    return 0;
     // Create seeder
     struct seeder* peer = create_seeder(src_addr,addrlen);
     if (peer == NULL) return -1;
@@ -47,49 +56,20 @@ int handle_msg
 }
 
 
-/**
- * Accept a message and deals with it
- * @param sockfd A socket file descriptor
- *        from where receive the message
- * @return 0 in case of success, -1 otherwise
- */
-int accept_msg(int sockfd){
-
-    struct sockaddr_storage src_addr;
-    socklen_t addrlen = sizeof src_addr;
-
-    // Receive a message
-    ssize_t size_msg;
-    struct msg* msg = create_msg(MAX_MSG); 
-    if (msg == NULL) return -1;
-    size_msg = recvfrom(sockfd, msg, MAX_MSG, 0, 
-                   (struct sockaddr*) &src_addr, 
-                   &addrlen);
-    if (size_msg == -1) return -1;
-
-    // Check valid length
-    uint16_t mlenght = msgget_length(msg);
-    if (mlenght > size_msg) {
-        drop_msg(msg);
-        printf("Message dropped: bad length\n"); 
-        return 0;
-    }
-
-    // Deal with the msg
-    if (handle_msg(msg, (struct sockaddr*) &src_addr, addrlen) == -1){
-        drop_msg(msg);
-        return -1;
-    }
-
-    return 0;
-}
 
 int main(int argc, char* argv[]){
     // Listen on localhost port 5555
     // XXX those values are just a test
     int sockfd = init_connection("127.0.0.1",5555);
 
-    accept_msg(sockfd);
+    struct acpt_msg* am = accept_msg(sockfd);
+/*
+    // Deal with the msg
+    if (handle_msg(msg, (struct sockaddr*) &src_addr, addrlen) == -1){
+        drop_msg(msg);
+        return -1;
+    }
+*/
 
     return 0;
 }
