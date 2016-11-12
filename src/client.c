@@ -41,7 +41,7 @@ struct acpt_msg* tracker_exchange(char* addr_tracker,int port_tracker,char* type
 
 	//Setting the sockaddr tracker
 	sockaddr_tracker.sin_family = ip_v;
-	sockaddr_tracker.sin_port = port_tracker;
+	sockaddr_tracker.sin_port = htons(port_tracker);
 	inet_pton(ip_v,addr_tracker,&sockaddr_tracker.sin_addr.s_addr);
 	socklen_t addrlen=sizeof(struct sockaddr_in);
 
@@ -83,7 +83,10 @@ struct acpt_msg* tracker_exchange(char* addr_tracker,int port_tracker,char* type
 }
 
 
-
+void put_execution(int sockfd_listen_peer, struct acpt_msg tracker_answer)
+{
+	
+}
 
 
 
@@ -100,7 +103,20 @@ int main(int argc, char* argv)
 	sockfd_peer=init_connection(NULL,argv[3]);
 	printf("Socket peer créé\n");
 
-	
+	struct acpt_msg tracker_anwser=tracker_exchange(argv[1],atoi(argv[2]),argv[4],argv[5]);
+
+	if(strcmp(argv[4],"PUT"))
+	{
+		put_execution(sockfd_peer,tracker_answer);
+	}
+	else if(strcmp(argv[4],"GET"))
+	{
+		get_execution(tracker_answer);
+	}
+	else
+	{
+		//TODO erreur
+	}
 
 	return 0;
 }
