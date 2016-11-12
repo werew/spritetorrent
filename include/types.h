@@ -38,6 +38,9 @@ struct seed {
 /* debug */
 #define PRINT           150
 
+// Max size of a msg
+#define MAX_MSG 1028
+
 typedef char msg_type;
 
 /**
@@ -52,6 +55,17 @@ struct msg {
     unsigned char _len0;
     unsigned char _len1;
     char data[];
+};
+
+/**
+ * This struct is used as
+ * return value of accept_msg
+ */
+struct acpt_msg {
+    struct msg* msg;            // received msg
+    ssize_t size;               // sie of the msg
+    struct sockaddr* addr_src;  // addr of the sender
+    socklen_t addrlen;          // size of the addr
 };
 
 
