@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <time.h>
 #include "../include/types.h"
 #include "../include/network.h"
 #include "../include/tracker.h"
@@ -41,7 +42,7 @@ struct seeder* create_seeder(struct sockaddr* addr){
     s->addr = addr;
 
     // Add a timestamp
-    s->lastseen = time();
+    s->lastseen = time(NULL);
     if (s->lastseen == -1){
         free(s);
         return NULL;
@@ -113,7 +114,6 @@ int h_put_t(struct tlv* m){
     }
 
     
-    uint16_t mlength = tlvget_length(m);
 
     struct tlv* hash = (struct tlv*) m->data;
     uint16_t hlength = tlvget_length(hash);
@@ -124,7 +124,6 @@ int h_put_t(struct tlv* m){
 
     struct tlv* client = (struct tlv*) 
         m->data + SIZE_HEADER_TLV + hlength;
-    uint16_t clength = tlvget_length(client);
 
 
     // Get the htable index and then search the seed
