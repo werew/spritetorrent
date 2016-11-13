@@ -109,45 +109,6 @@ void tlvset_length(struct tlv* tlv, uint16_t length){
     tlv->_len1 = pl[1];
 }
 
-/**
- * Creates a struct seeder from a generic
- * struct sockaddr and its length
- * @param addr Pointer to the struct sockaddr
- * @param length Actual size of the address
- */
-struct seeder* create_seeder(struct sockaddr* addr, socklen_t length){
-
-    // Allocate a struct seeder
-    struct seeder* s = malloc(sizeof(struct seeder));
-    if (s == NULL) return NULL;
-   
-    // Copy the address 
-    s->addr = malloc(length);
-    if (s->addr == NULL) goto error_1;
-    memcpy(s->addr,addr, length);
-
-    // Add a timestamp
-    s->lastseen = time();
-    if (s->lastseen == -1) goto error_2;
-    
-    return s;
-
-error_2:
-    free(s->addr);
-error_1:
-    free(s);
-    return NULL;
-}
-
-/**
- * Drop a given seeder freeing
- * the allocated memory
- * @param s A pointer to the seeder to drop
- */
-void drop_seeder(struct seeder* s){
-    free(s->addr);
-    free(s);
-}
 
 /**
  * Creates a socket and binds it to the given address
