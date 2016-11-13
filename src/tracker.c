@@ -137,7 +137,8 @@ int validate_tlv(struct tlv* main, unsigned int subs){
 
         // TODO check also the types
 
-        summ_lengths += tlvget_length((void*)main+expected_size);
+        summ_lengths += tlvget_length
+            ((struct tlv*)&main->data[expected_size-SIZE_HEADER_TLV]);
     }
 
     expected_size = nheaders*SIZE_HEADER_TLV + summ_lengths;    
