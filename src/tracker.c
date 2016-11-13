@@ -14,37 +14,40 @@
 #include "../include/network.h"
 #include "../include/tracker.h"
 
+/******************** DEBUG functions ***********************/
+void printhash(char* hash){
+    int i;
+    for (i=0;i<SHA256_HASH_SIZE;i++){
+        printf("%x",hash[i]);
+    }
+    printf("\n");
+}
+
+/******************** END DEBUG functions ******************/
+
 struct seed* htable[SIZE_HTABLE];
 
 /**
- * Creates a struct seeder from a generic
- * struct sockaddr and its length
+ * Creates a struct seeder from a struct sockaddr
  * @param addr Pointer to the struct sockaddr
- * @param length Actual size of the address
  */
-struct seeder* create_seeder
-(const struct sockaddr* addr, socklen_t length){
+struct seeder* create_seeder(struct sockaddr* addr){
 
     // Allocate a struct seeder
     struct seeder* s = malloc(sizeof(struct seeder));
     if (s == NULL) return NULL;
-   
-    // Copy the address 
-    s->addr = malloc(length);
-    if (s->addr == NULL) goto error_1;
-    memcpy(s->addr,addr, length);
+
+    // Attach address   
+    s->addr = addr;
 
     // Add a timestamp
     s->lastseen = time();
-    if (s->lastseen == -1) goto error_2;
+    if (s->lastseen == -1){
+        free(s);
+        return NULL;
+    }
     
     return s;
-
-error_2:
-    free(s->addr);
-error_1:
-    free(s);
-    return NULL;
 }
 
 /**
@@ -70,14 +73,6 @@ unsigned int htable_index(const char* data, size_t length){
     return hash;
 }
 
-//DEBUG
-void printhash(char* hash){
-    int i;
-    for (i=0;i<SHA256_HASH_SIZE;i++){
-        printf("%x",hash[i]);
-    }
-    printf("\n");
-}
 
 /**
  * Search a given hash in a list of seeds
@@ -104,49 +99,12 @@ struct seed* search_hash
 
 
 
-/*
-struct sockaddr* read_client(void* c){
-    struct msg* m = c;
-    switch (m->type) {
-        case C_AF_INET: 
-                s = malloc(sizeof(struct sockaddr_in));
-                s->sin_family = AF_INET;
-                memcpy(s->sin_addr.s_addr,m[
-            break;
-        case C_AF_INET6: 
-                s = malloc(sizeof(struct sockaddr_in6));
-                s->sin_family = AF_INET6;
-            break;
-        default: return NULL;
-    }
-}
-*/
-
-
-int validate_tlv(struct tlv* main, unsigned int subs){
-    puts("Validate tlv");//
-    unsigned int expected_size, nheaders, summ_lengths;
-    expected_size = nheaders = summ_lengths = 0;
-
-    uint16_t total_length = tlvget_length(main);
-
-    while (nheaders < subs){
-        nheaders++; 
-        expected_size = nheaders*SIZE_HEADER_TLV + summ_lengths;    
-        if (total_length < expected_size) return -1; 
-
-        // TODO check also the types
-
-        summ_lengths += tlvget_length
-            ((struct tlv*)&main->data[expected_size-SIZE_HEADER_TLV]);
-    }
-
-    expected_size = nheaders*SIZE_HEADER_TLV + summ_lengths;    
-    if (total_length < expected_size) return -1;
-
-    return 0;
-}
-
+/**
+ * Handle a message of type PUT_T storing 
+ * the seeder and also the hash if necessary
+ * @param m Message of type PUT_T
+ * @return 0 in case of success, -1 otherwise
+ */
 int h_put_t(struct tlv* m){
 
     if (validate_tlv(m,2) != 0){
@@ -185,13 +143,14 @@ int h_put_t(struct tlv* m){
         htable[hti] = s;
     } 
    
-    /*
-    struct seeder* client = read_client(&m->data[SHA256_HASH_SIZE]);  
-    if (client == NULL) return -1;
+    struct sockaddr* cl = client2sockaddr(client);  
+    if (cl == NULL) return -1;
+    
+    struct seeder* seeder = create_seeder(cl);
+    if (seeder == NULL) return -1;
 
-    client->next = s->seeders;
-    s->seeders = client;
-    */
+    seeder->next = s->seeders;
+    s->seeders = seeder;
 
     return 0;
 }
@@ -214,11 +173,6 @@ int handle_msg(struct msg* m){
         return 0;
     }
 
-    // Create seeder
-    struct seeder* peer = create_seeder
-            ((struct sockaddr*) &m->addr,m->addrlen);
-    if (peer == NULL) return -1;
-    
 
     //TODO complete
     switch (m->tlv->type){

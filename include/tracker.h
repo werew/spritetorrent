@@ -22,8 +22,7 @@ struct seed {
 
 #define SIZE_HTABLE 100
 
-struct seeder* create_seeder
-    (const struct sockaddr* addr, socklen_t length);
+struct seeder* create_seeder(struct sockaddr* addr);
 void drop_seeder(struct seeder* s);
 
 
