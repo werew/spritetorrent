@@ -5,6 +5,10 @@
 
 /***** Types ******/
 
+/* data */
+#define FILE_HASH        50
+#define CHUNK_HASH       51
+#define CLIENT           55
 /* client <--> client */
 #define PUT_C           100
 #define REP_PUT         101
@@ -20,8 +24,11 @@
 /* debug */
 #define PRINT           150
 
+// Size of the header of a tlv (type + length)
+#define SIZE_HEADER_TLV 3
 // Max size of the length of a struct tlv
 #define MAX_LEN_TLV 1028
+
 
 
 /**
