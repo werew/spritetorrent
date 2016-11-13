@@ -27,9 +27,13 @@
 *.i*86
 *.x86_64
 *.hex
+tracker
+client
 
 # Debug files
 *.dSYM/
 *.su
 
 *.swp
+
+
