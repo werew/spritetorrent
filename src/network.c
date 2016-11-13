@@ -148,6 +148,43 @@ int validate_tlv(struct tlv* msg, unsigned int nargs){
 
 
 /**
+ * Converts a struct tlv of type CLIENT to a
+ * struct sockaddr
+ * @param c A pointer to the struct tlv to convert
+ * @return A pointer to a dynamic allocated struct
+ *         sockaddr
+ */
+struct sockaddr* client2sockaddr(const struct tlv* c){
+    if (c->type != CLIENT) return NULL;
+    uint16_t len = tlvget_length(c);
+
+    struct sockaddr* s;
+    #define IN(p)  ((struct sockaddr_in* )p)
+    #define IN6(p) ((struct sockaddr_in6*)p)
+
+    switch (len) {
+        case 6:
+                s = malloc(sizeof(struct sockaddr_in));
+                memset(s,0,sizeof(struct sockaddr_in));
+                IN(s)->sin_family = AF_INET;
+                memcpy(&IN(s)->sin_port,c->data,2);
+                memcpy(&IN(s)->sin_addr.s_addr,&c->data[2],4);
+            break;
+        case 18:
+                s = malloc(sizeof(struct sockaddr_in6));
+                memset(s,0,sizeof(struct sockaddr_in6));
+                IN6(s)->sin6_family = AF_INET6;
+                memcpy(&IN6(s)->sin6_port,c->data,2);
+                memcpy(&IN6(s)->sin6_addr.s6_addr,&c->data[2],16);
+            break;
+        default: // Invalid addr type
+                return NULL;
+    }
+
+    return s;
+}
+
+/**
  * Creates a socket and binds it to the given address
  * and port.
  * @param addr A string containing an IPv4 or IPv6
