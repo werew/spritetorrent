@@ -68,5 +68,6 @@ void drop_msg(struct msg* m);
 void tlvset_length(struct tlv* tlv, uint16_t length);
 uint16_t tlvget_length(const struct tlv* tlv);
 
+int validate_tlv(struct tlv* msg, unsigned int nargs);
 
 #endif

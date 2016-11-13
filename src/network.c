@@ -109,6 +109,43 @@ void tlvset_length(struct tlv* tlv, uint16_t length){
     tlv->_len1 = pl[1];
 }
 
+/**
+ * Check the content of a message against errors and
+ * inconstistencies. For instance: check if the global 
+ * length is compatible with the lengths of the contents
+ * and if the message contains the expected types
+ * @param msg A pointer to the struct tlv containing the
+ *        message to validate
+ * @param nargs The number of struct tlv (args) contained 
+ *        inside the message (without considering the 
+ *        message itself
+ * @param types The expected types of the args //TODO 
+ * @return 0 in case of success, -1 otherwise
+ */
+int validate_tlv(struct tlv* msg, unsigned int nargs){
+    puts("Validate tlv");//
+    unsigned int expected_size, nheaders, summ_lengths;
+    expected_size = nheaders = summ_lengths = 0;
+
+    uint16_t total_length = tlvget_length(msg);
+
+    while (nheaders < nargs){
+        nheaders++; 
+        expected_size = nheaders*SIZE_HEADER_TLV + summ_lengths;    
+        if (total_length < expected_size) return -1; 
+
+        // TODO check also the types
+
+        summ_lengths += tlvget_length
+            ((struct tlv*)&msg->data[expected_size-SIZE_HEADER_TLV]);
+    }
+
+    expected_size = nheaders*SIZE_HEADER_TLV + summ_lengths;    
+    if (total_length < expected_size) return -1;
+
+    return 0;
+}
+
 
 /**
  * Creates a socket and binds it to the given address
