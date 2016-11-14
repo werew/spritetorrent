@@ -25,6 +25,36 @@ int ip_version(char* addr)
     return AF_INET; // XXX just not to break the program
 }
 
+struct sockaddr* human2sockaddr(char* addr, uint16_t port){
+	//Determine the version of IP
+	int ip_v = ip_version(addr_tracker);
+
+	struct sockaddr* sockaddr;
+
+	//Setting the sockaddr tracker
+	switch (ip_v) {
+		case AF_INET: 
+			sockaddr = malloc(sizeof(struct sockaddr_in));
+			if (sockaddr == NULL) return NULL;
+			IN(&sockaddr)->sin_family = ip_v;
+			IN(&sockaddr)->sin_port = htons(port);
+			if (inet_pton(ip_v,addr,
+				&IN(&sockaddr)->sin_addr.s_addr) == -1)
+				return NULL;
+			break;
+		case AF_INET6:
+			sockaddr = malloc(sizeof(struct sockaddr_in6));
+			if (sockaddr == NULL) return NULL;
+			IN6(&sockaddr)->sin6_family = ip_v;
+			IN6(&sockaddr)->sin6_port = htons(port);
+			if (inet_pton(ip_v,addr,
+				&IN6(&sockaddr)->sin6_addr.s6_addr) == -1)
+				return NULL;
+			break;
+		default: return NULL;
+	}
+}
+
 /**
  * Accept a message and deals with it
  * @param sockfd A socket file descriptor
@@ -159,8 +189,6 @@ struct sockaddr* client2sockaddr(const struct tlv* c){
     uint16_t len = tlvget_length(c);
 
     struct sockaddr* s;
-    #define IN(p)  ((struct sockaddr_in* )p)
-    #define IN6(p) ((struct sockaddr_in6*)p)
 
     switch (len) {
         case 6:

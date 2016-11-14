@@ -23,46 +23,35 @@
  * @param type: type of message send to the tracker
  * @param hash: hash send the tracker
  */
-struct acpt_msg* tracker_exchange(char* addr_tracker,int port_tracker,char* type, char* hash)
-{
+int tracker_exchange
+(char* addr_tracker,int port_tracker,char* type, char* hash){
 
 	int sockfd_tracker;
 
-	//Determine the version of IP
-	int ip_v=ip_version(addr_tracker);
+
+	struct sockaddr* socktrack = human2sockaddr(addr_tracker,port_tracker);
+	if (socktrack == NULL) fail("human2sockaddr");
+
+	socklen_t addrlen;
 
 	//Création du socket de communication avec le tracker
-	if((sockfd_tracker=socket(ip_v,SOCK_DGRAM,0))==-1)
-	{
-		//TODO traitement erreur
+	if((sockfd_tracker=socket(ip_v,SOCK_DGRAM,0))==-1){
+		fail("socket");
 	}
 
-	struct sockaddr_in sockaddr_tracker;
+	//TODO faire data
+	
+	uint16_t length = strlen(hash);
+	struct tlv* hash = create_tlv(length);
+	hash->type = FILE_HASH; 
+	tlvset_length(hash,length);
 
-	//Setting the sockaddr tracker
-	sockaddr_tracker.sin_family = ip_v;
-	sockaddr_tracker.sin_port = htons(port_tracker);
-	inet_pton(ip_v,addr_tracker,&sockaddr_tracker.sin_addr.s_addr);
-	socklen_t addrlen=sizeof(struct sockaddr_in);
+	struct tlv* client = create_tlv(...);//TODO
 
+	struct tlv data[] = { hash, client};
 	//Create message for the tracker
-	struct msg* tracker_msg=create_msg(1027);
-	//TODO mise du hash et du client
-	//TODO mise de la longueur
+	struct msg* tracker_msg = create_msg(type, data, 2, socktrack);
 
-	if(strcmp(type,"put")==0)
-	{
-		tracker_msg->type=PUT_T;
-	}
-	else if(strcmp(type,"get")==0)
-	{
-		tracker_msg->type=GET;
-	}
-	//TODO message keep alive
-	else
-	{
-		//TODO erreur, action incorrect
-	}
 
 	//Send message to the tracker
 	if(sendto(sockfd_tracker,tracker_msg,(msgget_length(tracker_msg)+3),0,(struct sockaddr*)&sockaddr_tracker,addrlen) == -1)
@@ -106,38 +95,54 @@ void get_execution(struct acpt_msg* tracker_answer)
 	//TODO
 }
 
+void fail(char* emsg){
+	perror(emsg);
+	exit(EXIT_FAILURE);
+}
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv){
 	if(argc!=6){
-		printf("Usage: %s tracker_addr tracker_port listen_port action hash",argv[0]);
+		printf("Usage: %s tracker_addr tracker_port "
+		       "listen_port action hash",argv[0]);
 		exit(EXIT_FAILURE);
 	}
 
-	int sockfd_peer;
-
 	//Initialisation du socket d'écoute des peer
-	sockfd_peer=init_connection(NULL,atoi(argv[3]));
+	int sockfd_peer = init_connection(NULL, atoi(argv[3]));
+	if (sockfd_peer == -1) fail("init_connection");
 	printf("Socket peer créé\n");
 
-	//Communicate with tracker ans return its answer
-	struct acpt_msg* tracker_answer=tracker_exchange(argv[1],atoi(argv[2]),argv[4],argv[5]);
-
-
+	//Communicate with tracker and return its answer
+	char type_exchange;
 	//Choose different execution depending if client put or get hash
-	if(strcmp(argv[4],"PUT"))
-	{
-		printf("Listenning on port %s",argv[3]);	//XXX
-		put_execution(sockfd_peer,tracker_answer);
-	}
-	else if(strcmp(argv[4],"GET"))
-	{
-		get_execution(tracker_answer);
-	}
-	else
-	{
-		//TODO erreur
+	if(strcmp(argv[4],"put")){
+		type_exchange = PUT_T;
+	} else if(strcmp(argv[4],"get")){
+		type_exchange = GET;
+	} else {
+		fail("Invalid action");
 	}
 
+
+	if (tracker_exchange(argv[1],atoi(argv[2]),
+		type_exchange,argv[5]) == -1) fail("tracker_exchange");
+
+/*
+	if(strcmp(argv[4],"put")){
+		printf("Listenning on port %s",argv[3]);	//XXX
+		tracker_answer = tracker_exchange
+			(argv[1],atoi(argv[2]),PUT_T,argv[5]);
+		//put_execution(sockfd_peer,tracker_answer);
+	} else if(strcmp(argv[4],"get")){
+		tracker_answer = tracker_exchange
+			(argv[1],atoi(argv[2]),GET_T,argv[5]);
+		//get_execution(tracker_answer);
+	} else {
+		fail("Invalid action");
+	}
+
+	if (tracker_answer == NULL) fail("tracker_exchange");
+*/
+	
 	return 0;
 }
