@@ -196,7 +196,8 @@ struct seed* search_hash
  * @param m Message of type PUT_T
  * @return 0 in case of success, -1 otherwise
  */
-int h_put_t(st_ttask ttask, struct tlv* m){
+int h_put_t(st_ttask ttask, struct msg* m){
+
 
     // Check against max number of hosts
     if (ttask->hosts_count >= ttask->hosts_max){
@@ -205,13 +206,13 @@ int h_put_t(st_ttask ttask, struct tlv* m){
     }
 
     // Some tests on the format of the message
-    if (validate_tlv(m,2) != 0){
+    if (validate_tlv(m->tlv,2) != 0){
         puts("Message dropped: invalid format");
         return 0;
     }
 
 
-    struct tlv* hash = (struct tlv*) m->data;
+    struct tlv* hash = (struct tlv*) m->tlv->data;
     uint16_t hlength = tlvget_length(hash);
     if (hlength != SHA256_HASH_SIZE) {
         puts("Drop msg: wrong hash type");
@@ -241,8 +242,8 @@ int h_put_t(st_ttask ttask, struct tlv* m){
     // is garanted by the hosts_max attribute of the st_ttask
     // and the fact that KEEP_ALIVE ops are performed only on
     // the first match)
-    struct tlv* client =
-        (void*) m->data + SIZE_HEADER_TLV + hlength;
+    struct tlv* client = (void*) m->tlv->data + 
+                         SIZE_HEADER_TLV + hlength;
 
     struct sockaddr* cl = client2sockaddr(client);  
     if (cl == NULL) return -1;
@@ -281,9 +282,9 @@ int handle_msg(st_ttask ttask, struct msg* m){
 
     //TODO complete
     switch (m->tlv->type){
-        case PUT_T: h_put_t(ttask, m->tlv);
+        case PUT_T: h_put_t(ttask, m);
             break;
-        case GET: puts("GET");
+        case GET:   //h_get_t(ttask, m)
             break;
         case KEEP_ALIVE: puts("KEEP_ALIVE");
             break;
