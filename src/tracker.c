@@ -54,58 +54,67 @@ st_ttask st_create_ttask
 }
 
 /**
+ * This function listen, accept and handle all the incoming
+ * messages for all the duration of the timeout
+ * @param ttask An active st_ttask
+ * @return 0 in case of success, -1 otherwise
+ */
+int st_twork(st_ttask ttask){
+    time_t now, ltime;
+    struct msg* m;
+    struct pollfd pfd;
+
+    // Init pollfd
+    pfd.fd = ttask->sockfd;
+    pfd.events = POLLIN;
+
+    while (1){
+
+        // Timeout: finish if too much time has passed
+        // since the last probe 
+        if ((now = time(NULL)) == -1) return -1;
+        if (now - ttask->last_probe > ttask->timeout) break;
+
+        // Wait for incoming messages during the remaining time
+        ltime = ttask->timeout - (now-ttask->last_probe);
+
+        int ret =  poll(&pfd, 1, ltime * 1000);
+        if (ret == -1) return -1;  // error
+        else if (ret == 0 ) break; // timeout
+
+        // A message has arrived
+        printf("Accept\n");
+        if ((m = accept_msg(ttask->sockfd)) == NULL) return -1;
+                
+        if (handle_msg(ttask, m) == -1) return -1;
+    }
+
+    return 0;
+}
+
+
+/**
  * Launch a tracker
  * @param ttask A ttask previously initialized
  * @return -1 in case of error
  */
 int st_tstart(st_ttask ttask){
    
-    struct pollfd pfd;
-    pfd.fd = ttask->sockfd;
-    pfd.events = POLLIN;
 
-    // Main listen/aswer/probe loop 
+    // Main work/probe loop 
     while(1){
+        // Update last_probe timestamp
         ttask->last_probe = time(NULL); 
         if (ttask->last_probe == -1) return -1;
         
         // listen/handle/reply
-        while (1){
-
-            printf("Wait\n");
-
-
-            int now = time(NULL);
-            if (now == -1) return -1;
-
-            // Break if too much time has passed since
-            // the last probe
-            if ( now - ttask->last_probe > ttask->timeout) break;
-
-  
-            // Wait for incoming messages during the remaining time
-            time_t ltime = ttask->timeout - (now-ttask->last_probe);
-            int ret =  poll(&pfd, 1, ltime * 1000);
-            if (ret == -1) return -1;
-            else if (ret == 0 ) break; // timeout
-            
-            
-            printf("Accept\n");
-            // A message has arrived
-
-            struct msg* m = accept_msg(ttask->sockfd);
-            if (m == NULL) return -1;
-                    
-            if (handle_msg(ttask, m) == -1) return -1;
-
-        }
+        printf("Wait\n");
+        if (st_twork(ttask) == -1) return -1;
 
         // TODO Probe          
-
-            printf("Probe\n");
+        printf("Probe\n");
     }
 
-    
     return 0; 
 }
 
