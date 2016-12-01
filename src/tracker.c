@@ -45,7 +45,7 @@ st_ttask st_create_ttask
     st_ttask ttask = calloc(1,sizeof(struct ttask));
     if (ttask == NULL) return NULL;
 
-    ttask->sockfd = binded_socket(port);
+    ttask->sockfd = bound_socket(port);
     if (ttask->sockfd == -1) {
         free(ttask);
         return NULL;

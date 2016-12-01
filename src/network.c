@@ -222,7 +222,7 @@ struct sockaddr* client2sockaddr(const struct tlv* c){
  *        address
  * @param port The port to use. If 0 a random port
  *        will be used
- * @return The fd of the socket binded to the given
+ * @return The fd of the socket bound to the given
  *        port and address or -1 in case of error
  */
 int init_connection(char* addr, uint16_t port){	
@@ -261,13 +261,13 @@ int init_connection(char* addr, uint16_t port){
 
 
 /**
- * Creates a new socket binded at the given port
+ * Creates a new socket bound at the given port
  * and sets the address to in6addr_any, which (by default) 
  * allows connections to be established from any IPv4 or IPv6 client
- * @param port The port to which this socket must be binded
+ * @param port The port to which this socket must be bound
  * @return The file descriptor of the socket, or -1 in case of error
  */
-int binded_socket(uint16_t port){	
+int bound_socket(uint16_t port){	
 	int sockfd;
 	struct sockaddr_in6 sockaddr;
 
