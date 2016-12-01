@@ -224,8 +224,14 @@ int handle_msg(struct msg* m){
 }
 
 
+void fail(const char* emsg){
+    perror(emsg);
+    exit(1);
+}
 
 int main(int argc, char* argv[]){
+
+/* OLD
     // Listen on localhost port 5555
     // XXX those values are just a test
     int sockfd = init_connection("127.0.0.1",5555);
@@ -236,6 +242,11 @@ int main(int argc, char* argv[]){
     if (handle_msg(m) == -1) perror("");
 
     drop_msg(m);
+*/
+
+    st_ttask ttask = st_create_ttask(5555, 10000, 60);
+    if (ttask == NULL) fail("st_create_ttask");
+
     return 0;
 }
   
