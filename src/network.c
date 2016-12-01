@@ -9,8 +9,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
-#include "../include/types.h"
-#include "../include/network.h"
+#include "types.h"
+#include "network.h"
 
 /**
  * Determine the using version of IP adress
@@ -27,7 +27,7 @@ int ip_version(char* addr)
 
 struct sockaddr* human2sockaddr(char* addr, uint16_t port){
 	//Determine the version of IP
-	int ip_v = ip_version(addr_tracker);
+	int ip_v = ip_version(addr);
 
 	struct sockaddr* sockaddr;
 
@@ -53,6 +53,8 @@ struct sockaddr* human2sockaddr(char* addr, uint16_t port){
 			break;
 		default: return NULL;
 	}
+
+    return sockaddr;
 }
 
 /**

@@ -11,9 +11,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
-#include "../include/types.h"
-#include "../include/network.h"
-#include "../include/tracker.h"
+#include "types.h"
+#include "network.h"
+#include "tracker.h"
 
 /******************** DEBUG functions ***********************/
 void printhash(char* hash){
