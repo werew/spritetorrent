@@ -27,9 +27,6 @@ void printhash(char* hash){
 
 /******************** END DEBUG functions ******************/
 
-struct seed* htable[SIZE_HTABLE];
-
-
 
 /**
  * Creates a new ttask suitable to start a tracker
@@ -99,7 +96,7 @@ int st_tstart(st_ttask ttask){
             struct msg* m = accept_msg(ttask->sockfd);
             if (m == NULL) return -1;
                     
-            if (handle_msg(m) == -1) return -1;
+            if (handle_msg(ttask, m) == -1) return -1;
 
         }
 
@@ -190,14 +187,20 @@ struct seed* search_hash
  * @param m Message of type PUT_T
  * @return 0 in case of success, -1 otherwise
  */
-int h_put_t(struct tlv* m){
+int h_put_t(st_ttask ttask, struct tlv* m){
 
-    if (validate_tlv(m,2) != 0){
-        puts("Message dropped: invalid length");
-        return -1;
+    // Check against max number of hosts
+    if (ttask->hosts_count >= ttask->hosts_max){
+        puts("Limit of hosts for this server");
+        return 0;
     }
 
-    
+    // Some tests on the format of the message
+    if (validate_tlv(m,2) != 0){
+        puts("Message dropped: invalid format");
+        return 0;
+    }
+
 
     struct tlv* hash = (struct tlv*) m->data;
     uint16_t hlength = tlvget_length(hash);
@@ -206,15 +209,12 @@ int h_put_t(struct tlv* m){
         return -1;
     }
 
-    struct tlv* client = (struct tlv*) 
-        m->data + SIZE_HEADER_TLV + hlength;
-
 
     // Get the htable index and then search the seed
     unsigned int hti = htable_index(hash->data,hlength);
-    struct seed* s = search_hash(htable[hti],hash->data);
+    struct seed* s = search_hash(ttask->htable[hti],hash->data);
 
-    // If no seed corresponds to the hash create a new one
+    // If no seed corresponds to the hash append a new one
     if (s == NULL){
         puts("Create seed");//
         s = malloc(sizeof (struct seed));
@@ -222,10 +222,19 @@ int h_put_t(struct tlv* m){
 
         memcpy(s->hash,hash->data,hlength);
         s->seeders = NULL;
-        s->next = htable[hti];
-        htable[hti] = s;
+        s->next = ttask->htable[hti];
+
+        ttask->htable[hti] = s;
     } 
-   
+  
+    // Append seeder (note that duplicate seeders for the
+    // same seed are allowed, protection against DoS attacks
+    // is garanted by the hosts_max attribute of the st_ttask
+    // and the fact that KEEP_ALIVE ops are performed only on
+    // the first match)
+    struct tlv* client =
+        (void*) m->data + SIZE_HEADER_TLV + hlength;
+
     struct sockaddr* cl = client2sockaddr(client);  
     if (cl == NULL) return -1;
     
@@ -234,6 +243,10 @@ int h_put_t(struct tlv* m){
 
     seeder->next = s->seeders;
     s->seeders = seeder;
+
+    // Keep track of the number of seeders
+    ttask->hosts_count++;
+    printf("%d\n",ttask->hosts_count);
 
     return 0;
 }
@@ -247,7 +260,7 @@ int h_put_t(struct tlv* m){
  *        pointed by src_addr
  * @return 0 in case of success, -1 otherwise
  */
-int handle_msg(struct msg* m){
+int handle_msg(st_ttask ttask, struct msg* m){
 
     // Check valid length
     uint16_t mlenght = tlvget_length(m->tlv);
@@ -259,7 +272,7 @@ int handle_msg(struct msg* m){
 
     //TODO complete
     switch (m->tlv->type){
-        case PUT_T: h_put_t(m->tlv);
+        case PUT_T: h_put_t(ttask, m->tlv);
             break;
         case GET: puts("GET");
             break;
@@ -292,7 +305,7 @@ int main(int argc, char* argv[]){
     drop_msg(m);
 */
 
-    st_ttask ttask = st_create_ttask(5555, 10000, 60);
+    st_ttask ttask = st_create_ttask(5555, 10, 10);
     if (ttask == NULL) fail("st_create_ttask");
 
     if (st_tstart(ttask) == -1) fail("st_tstart");
