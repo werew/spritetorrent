@@ -4,13 +4,15 @@
 #include "sha256.h"
 
 /*******    Tracker Task   ********/
-typedef struct {
-    int sock;
-    void* htable;
-    int hcount; 
-    int hmax;
+
+#define SIZE_HTABLE 100
+typedef struct ttask {
+    int sockfd;
+    unsigned int hosts_count; 
+    unsigned int hosts_max;
     time_t timeout;
-} st_ttask;
+    void* htable[SIZE_HTABLE];
+} *st_ttask;
     
 /******* Seeds and seeders ********/
 
@@ -29,11 +31,11 @@ struct seed {
     struct seed* next;           // Next hash of the list
 };
 
-#define SIZE_HTABLE 100
 
+st_ttask st_create_ttask
+(uint16_t port, unsigned int max_hosts, time_t timeout);
 struct seeder* create_seeder(struct sockaddr* addr);
 void drop_seeder(struct seeder* s);
-
 
 
 

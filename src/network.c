@@ -260,3 +260,11 @@ int init_connection(char* addr, uint16_t port){
 
 
 
+int binded_socket(uint16_t port){	
+    // TODO
+    return 0;
+}
+
+
+
+

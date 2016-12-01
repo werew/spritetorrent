@@ -28,6 +28,42 @@ void printhash(char* hash){
 
 struct seed* htable[SIZE_HTABLE];
 
+
+
+/**
+ * Creates a new ttask suitable to start a tracker
+ * @param max_hosts The number of clients manageable by this tracker
+ * @param timeout The number of seconds required for an hosts to
+ *        to became inactive (and be consequently removed).
+ * @return a new ttask of NULL in case of error
+ * @note A ttask is created so that the tracker will listen from
+ *       all its IPv4 and IPv6 interfaces
+ */
+st_ttask st_create_ttask
+(uint16_t port, unsigned int max_hosts, time_t timeout){
+    st_ttask ttask = calloc(1,sizeof(struct ttask));
+    if (ttask == NULL) return NULL;
+
+    ttask->sockfd = binded_socket(port);
+    if (ttask->sockfd == -1) {
+        free(ttask);
+        return NULL;
+    }
+    ttask->hosts_max = max_hosts;
+    ttask->timeout = timeout;
+
+    return ttask;
+}
+
+/**
+ * Launch a tracker
+ * @param ttask A ttask previously initialized
+ * @return -1 in case of error
+ */
+int st_tstart(st_ttask ttask){
+   return 0; 
+}
+
 /**
  * Creates a struct seeder from a struct sockaddr
  * @param addr Pointer to the struct sockaddr
