@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <poll.h>
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
@@ -61,7 +62,54 @@ st_ttask st_create_ttask
  * @return -1 in case of error
  */
 int st_tstart(st_ttask ttask){
-   return 0; 
+   
+    struct pollfd pfd;
+    pfd.fd = ttask->sockfd;
+    pfd.events = POLLIN;
+
+    // Main listen/aswer/probe loop 
+    while(1){
+        ttask->last_probe = time(NULL); 
+        if (ttask->last_probe == -1) return -1;
+        
+        // listen/handle/reply
+        while (1){
+
+            printf("Wait\n");
+
+
+            int now = time(NULL);
+            if (now == -1) return -1;
+
+            // Break if too much time has passed since
+            // the last probe
+            if ( now - ttask->last_probe > ttask->timeout) break;
+
+  
+            // Wait for incoming messages during the remaining time
+            time_t ltime = ttask->timeout - (now-ttask->last_probe);
+            int ret =  poll(&pfd, 1, ltime * 1000);
+            if (ret == -1) return -1;
+            else if (ret == 0 ) break; // timeout
+            
+            
+            printf("Accept\n");
+            // A message has arrived
+
+            struct msg* m = accept_msg(ttask->sockfd);
+            if (m == NULL) return -1;
+                    
+            if (handle_msg(m) == -1) return -1;
+
+        }
+
+        // TODO Probe          
+
+            printf("Probe\n");
+    }
+
+    
+    return 0; 
 }
 
 /**
@@ -246,6 +294,8 @@ int main(int argc, char* argv[]){
 
     st_ttask ttask = st_create_ttask(5555, 10000, 60);
     if (ttask == NULL) fail("st_create_ttask");
+
+    if (st_tstart(ttask) == -1) fail("st_tstart");
 
     return 0;
 }

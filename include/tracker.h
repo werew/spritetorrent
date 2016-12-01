@@ -37,6 +37,7 @@ st_ttask st_create_ttask
 (uint16_t port, unsigned int max_hosts, time_t timeout);
 struct seeder* create_seeder(struct sockaddr* addr);
 void drop_seeder(struct seeder* s);
+int handle_msg(struct msg* m);
 
 
 
