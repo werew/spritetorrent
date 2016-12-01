@@ -7,11 +7,12 @@
 
 #define SIZE_HTABLE 100
 typedef struct ttask {
-    int sockfd;
-    unsigned int hosts_count; 
-    unsigned int hosts_max;
-    time_t timeout;
-    void* htable[SIZE_HTABLE];
+    int sockfd;                 // Socket from where to listen
+    unsigned int hosts_count;   // Number of connected hosts
+    unsigned int hosts_max;     // Max number of hosts allowed
+    time_t timeout;             // Probe frequency
+    time_t last_probe;          // Timestamp of the last probe
+    void* htable[SIZE_HTABLE];  // Hash table
 } *st_ttask;
     
 /******* Seeds and seeders ********/
