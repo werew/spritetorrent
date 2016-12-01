@@ -3,6 +3,15 @@
 
 #include "sha256.h"
 
+/*******    Tracker Task   ********/
+typedef struct {
+    int sock;
+    void* htable;
+    int hcount; 
+    int hmax;
+    time_t timeout;
+} st_ttask;
+    
 /******* Seeds and seeders ********/
 
 /* A cell of a list of seeders */
