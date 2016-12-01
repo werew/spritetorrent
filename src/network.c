@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <inttypes.h>
+#include <errno.h>
 #include <arpa/inet.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -259,10 +260,33 @@ int init_connection(char* addr, uint16_t port){
 
 
 
-
+/**
+ * Creates a new socket binded at the given port
+ * and sets the address to in6addr_any, which (by default) 
+ * allows connections to be established from any IPv4 or IPv6 client
+ * @param port The port to which this socket must be binded
+ * @return The file descriptor of the socket, or -1 in case of error
+ */
 int binded_socket(uint16_t port){	
-    // TODO
-    return 0;
+	int sockfd;
+	struct sockaddr_in6 sockaddr;
+
+	if ((sockfd = socket(AF_INET6, SOCK_DGRAM, 0)) == -1)
+        return -1;
+
+	sockaddr.sin6_family = AF_INET6;
+	sockaddr.sin6_port   = htons(port);
+    sockaddr.sin6_addr   = in6addr_any;
+
+	if (bind(sockfd,(struct sockaddr *)&sockaddr,
+             sizeof(struct sockaddr_in6)) == -1) {
+        int e_bkp = errno;
+        close(sockfd);
+        errno = e_bkp;
+        return -1;
+    }
+
+    return sockfd;
 }
 
 
