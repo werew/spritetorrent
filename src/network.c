@@ -90,6 +90,28 @@ error_1:
     return NULL;
 }
 
+
+/**
+ * Sends a message
+ * @param sockfd The socket trough which the message must
+ *        be sent
+ * @param m A pointer to a struct msg containing the message
+ * @return 0 in case of success, -1 otherwise
+ */
+int send_msg(int sockfd, struct msg* m){
+    size_t sizemsg = SIZE_HEADER_TLV + tlvget_length(m->tlv);
+    ssize_t s = sendto(sockfd, m->tlv, sizemsg, 0, 
+            (struct sockaddr*) &m->addr, m->addrlen);
+
+    puts("sending");
+    if (s < sizemsg) return -1;
+
+    puts("sent");
+
+    return 0;
+
+}
+
 /**
  * Allocates a struct msg of the good size
  * @param max_length The maximum size of the

@@ -7,5 +7,6 @@
 int init_connection(char* addr, uint16_t port);
 int bound_socket(uint16_t port);
 struct msg* accept_msg(int sockfd);
+int send_msg(int sockfd, struct msg* m);
 
 #endif

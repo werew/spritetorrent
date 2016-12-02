@@ -258,6 +258,11 @@ int h_put_t(st_ttask ttask, struct msg* m){
     ttask->hosts_count++;
     printf("%d\n",ttask->hosts_count);
 
+
+    // ACK PUT
+    m->tlv->type = ACK_PUT;
+    if (send_msg(ttask->sockfd, m) == -1) return -1;
+    
     return 0;
 }
 
