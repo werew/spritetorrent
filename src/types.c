@@ -44,7 +44,7 @@ void drop_tlv(struct tlv* tlv){
  *        relative to this message
  */
 struct msg* create_msg(size_t size, struct sockaddr s){
-    struct msg* m = calloc(sizeof(struct msg));
+    struct msg* m = calloc(1,sizeof(struct msg));
     if (m == NULL) return NULL;
 
     if ((m->tlv = calloc(1,size)) == NULL) {
@@ -153,14 +153,14 @@ struct sockaddr* client2sockaddr(const struct tlv* c){
 
     switch (len) {
         case 6:
-                s = calloc(sizeof(struct sockaddr_in));
+                s = calloc(1,sizeof(struct sockaddr_in));
                 if (s == NULL) return NULL;
                 IN(s)->sin_family = AF_INET;
                 memcpy(&IN(s)->sin_port,c->data,2);
                 memcpy(&IN(s)->sin_addr.s_addr,&c->data[2],4);
             break;
         case 18:
-                s = calloc(sizeof(struct sockaddr_in6));
+                s = calloc(1,sizeof(struct sockaddr_in6));
                 if (s == NULL) return NULL;
                 IN6(s)->sin6_family = AF_INET6;
                 memcpy(&IN6(s)->sin6_port,c->data,2);
