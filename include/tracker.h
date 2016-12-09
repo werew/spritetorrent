@@ -40,8 +40,13 @@ int st_twork(st_ttask ttask);
 
 struct seeder* create_seeder(struct sockaddr* addr);
 void drop_seeder(struct seeder* s);
-int handle_msg(st_ttask ttask, struct msg* m);
 
+ssize_t seeders2clientlist
+    (struct seeder* s, void** dest, time_t max_age, size_t max_size);
+
+int handle_msg(st_ttask ttask, struct msg* m);
+int h_get_t(st_ttask ttask, struct msg* m);
+int h_put_t(st_ttask ttask, struct msg* m);
 
 
 #endif

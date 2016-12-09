@@ -279,7 +279,7 @@ int handle_msg(st_ttask ttask, struct msg* m){
     switch (m->tlv->type){
         case PUT_T: h_put_t(ttask, m);
             break;
-        case GET:   //h_get_t(ttask, m)
+        case GET:   h_get_t(ttask, m);
             break;
         case KEEP_ALIVE: puts("KEEP_ALIVE");
             break;
@@ -290,25 +290,153 @@ int handle_msg(st_ttask ttask, struct msg* m){
 }
 
 
+/**
+ * Handle a message of type GET answering back to the
+ * sender with the list of seeders for a the given hash
+ * @param ttask Current tracker task
+ * @param m Message of type GET
+ * @return 0 in case of success, -1 otherwise
+ */
+int h_get_t(st_ttask ttask, struct msg* m){
+
+    // Some tests on the format of the message
+    if (validate_tlv(m->tlv,2) != 0){
+        puts("Message dropped: invalid format");
+        return 0;
+    }
+
+    struct tlv* hash = (struct tlv*) m->tlv->data;
+    uint16_t hlength = tlvget_length(hash);
+    if (hlength != SHA256_HASH_SIZE) {
+        puts("Drop msg: wrong hash type");
+        return -1;
+    }
+
+    // Read client value 
+    struct tlv* client = (void*) m->tlv->data + 
+                         SIZE_HEADER_TLV + hlength;
+    struct sockaddr* cl = client2sockaddr(client);  
+    if (cl == NULL) return -1;
+    puts("Got client"); printsockaddr(cl);
+
+    // Get the htable index and then search the seeders
+    unsigned int hti = htable_index(hash->data,hlength);
+    struct seed* s = search_hash(ttask->htable[hti],hash->data);
+
+    // Craft answer
+    struct msg* asw = create_msg(0, cl);
+    if (asw == NULL) goto err_1;
+    asw->tlv->type = ACK_GET;
+
+    // If there are seeders for the hash
+    if (s != NULL && s->seeders != NULL) {
+
+        // Get the list of the seeders
+        void* client_list = NULL;
+        size_t size_clients = seeders2clientlist(s->seeders,
+            &client_list, ttask->timeout, MAX_LEN_TLV);
+        if (size_clients == -1) goto err_2;
+
+        // Copy list into the message        
+        void* tmp = realloc(asw->tlv, SIZE_HEADER_TLV+size_clients); 
+        if (tmp == NULL) {free(client_list); goto err_2;};
+        asw->tlv = tmp;
+
+        memcpy(&asw->tlv[SIZE_HEADER_TLV], client_list, size_clients);
+        asw->size = SIZE_HEADER_TLV + size_clients; 
+
+        free(client_list);
+    }
+    
+    if (send_msg(ttask->sockfd, asw) == -1) goto err_2;
+
+    drop_msg(asw);
+    free(cl);
+    
+    return 0;
+
+err_2:
+    drop_msg(asw);
+err_1:
+    free(cl);
+    return -1;
+}
+
+
+/**
+ * Collect a linked list of seeders on a unique buf
+ * containing all the seeders as tlv clients
+ * @param s Seeders linked list
+ * @param dest A point to a pointer where to store the addr of the buf
+ * @param max_age Age limit
+ * @param max_size Max size of the buf
+ * @return The size of the buf in case of success, -1 otherwise
+ */
+ssize_t seeders2clientlist
+    (struct seeder* s, void** dest, time_t max_age, size_t max_size){
+    
+    size_t mem_size = 512;
+    size_t used_size = 0;
+    void* mem = malloc(mem_size);
+    if (mem == NULL) return -1;
+
+    time_t now = time(NULL);
+    struct tlv* client = NULL;
+
+    while (s != NULL){
+
+        // Do not collect expired seeders
+        if (now - s->lastseen > max_age) continue;
+
+        // Get client
+        client = sockaddr2client(s->addr);
+        if (client == NULL) goto err_1;
+
+        size_t size_cli = SIZE_HEADER_TLV + tlvget_length(client);
+
+        // Check max_size
+        if (used_size + size_cli > max_size) {
+            free(client);
+            break;
+        }
+       
+        // Resize buf if necessary 
+        if (used_size + size_cli < mem_size){
+            mem_size += size_cli + 512;
+            void* tmp = realloc(mem, mem_size);
+            if (tmp == NULL) goto err_2;
+            mem = tmp;
+        }
+
+        // Copy client
+        memcpy((char*) mem + used_size, client, size_cli);
+        used_size += size_cli;
+        free(client);
+
+        s = s->next;
+    }
+
+    *dest = mem;
+    return used_size;
+
+err_2:
+    free(client);
+err_1:
+    free(mem);
+    return -1;
+}
+
+
+
 void fail(const char* emsg){
     perror(emsg);
     exit(1);
 }
 
+
+
+
 int main(int argc, char* argv[]){
-
-/* OLD
-    // Listen on localhost port 5555
-    // XXX those values are just a test
-    int sockfd = init_connection("127.0.0.1",5555);
-
-    struct msg* m = accept_msg(sockfd);
-
-    // Deal with the msg
-    if (handle_msg(m) == -1) perror("");
-
-    drop_msg(m);
-*/
 
     st_ttask ttask = st_create_ttask(5555, 10, 10);
     if (ttask == NULL) fail("st_create_ttask");
