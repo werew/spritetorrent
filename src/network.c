@@ -237,6 +237,41 @@ struct sockaddr* client2sockaddr(const struct tlv* c){
     return s;
 }
 
+
+/**
+ * Converts a struct tlv of type CLIENT to a
+ * struct sockaddr
+ * @param c A pointer to the struct tlv to convert
+ * @return A pointer to a dynamic allocated struct
+ *         sockaddr
+ */
+struct tlv* sockaddr2client(const struct sockaddr* s){
+
+    struct tlv* c;
+
+    switch (s->sa_family){
+        case AF_INET: 
+                if((c = create_tlv(2+4)) == NULL) return NULL;
+                tlvset_length(c, 2+4);
+                memcpy(c->data, &IN(s)->sin_port,2);
+                memcpy(&c->data[2], &IN(s)->sin_addr.s_addr,4);
+            break;
+        case AF_INET6: 
+                if((c = create_tlv(2+16)) == NULL) return NULL;
+                tlvset_length(c, 2+16);
+                memcpy(c->data, &IN6(s)->sin6_port,2);
+                memcpy(&c->data[2], &IN(s)->sin6_addr.s6_addr,16);
+            break;
+        default: // Invalid addr type
+                return NULL;
+    }
+
+    c->type = CLIENT;
+    return c;
+}
+
+
+
 /**
  * Creates a socket and binds it to the given address
  * and port.

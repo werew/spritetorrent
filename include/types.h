@@ -71,5 +71,8 @@ uint16_t tlvget_length(const struct tlv* tlv);
 int validate_tlv(struct tlv* msg, unsigned int nargs);
 
 struct sockaddr* client2sockaddr(const struct tlv* c);
+struct tlv* sockaddr2client(const struct sockaddr* s);
+
+
 
 #endif
