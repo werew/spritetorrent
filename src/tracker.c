@@ -15,17 +15,7 @@
 #include "types.h"
 #include "network.h"
 #include "tracker.h"
-
-/******************** DEBUG functions ***********************/
-void printhash(char* hash){
-    int i;
-    for (i=0;i<SHA256_HASH_SIZE;i++){
-        printf("%x",hash[i]);
-    }
-    printf("\n");
-}
-
-/******************** END DEBUG functions ******************/
+#include "debug.h"
 
 
 /**

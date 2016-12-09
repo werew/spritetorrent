@@ -17,7 +17,7 @@ DEP = $(OBJECTS:%.o=%.d)
 
 all: bin/tracker 
 
-bin/tracker: obj/tracker.o obj/network.o
+bin/tracker: obj/tracker.o obj/network.o obj/debug.o
 	@echo "\n-----------------> Linking ... "
 	@mkdir -p $(BINDIR)
 	$(CC) $(CFLAGS) $^ -o $@

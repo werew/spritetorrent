@@ -1,6 +1,8 @@
 #ifndef _SHA256_H_
 #define _SHA256_H_
 
+#include <stdint.h>
+
 /* Size of an hash in bytes */
 #define SHA256_HASH_SIZE 64
 
