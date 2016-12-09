@@ -217,15 +217,15 @@ struct sockaddr* client2sockaddr(const struct tlv* c){
 
     switch (len) {
         case 6:
-                s = malloc(sizeof(struct sockaddr_in));
-                memset(s,0,sizeof(struct sockaddr_in));
+                s = calloc(sizeof(struct sockaddr_in));
+                if (s == NULL) return NULL;
                 IN(s)->sin_family = AF_INET;
                 memcpy(&IN(s)->sin_port,c->data,2);
                 memcpy(&IN(s)->sin_addr.s_addr,&c->data[2],4);
             break;
         case 18:
-                s = malloc(sizeof(struct sockaddr_in6));
-                memset(s,0,sizeof(struct sockaddr_in6));
+                s = calloc(sizeof(struct sockaddr_in6));
+                if (s == NULL) return NULL;
                 IN6(s)->sin6_family = AF_INET6;
                 memcpy(&IN6(s)->sin6_port,c->data,2);
                 memcpy(&IN6(s)->sin6_addr.s6_addr,&c->data[2],16);
