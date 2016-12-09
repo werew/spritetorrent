@@ -52,9 +52,9 @@ struct tlv {
  */
 struct msg {
     struct tlv* tlv;            // received msg
-    ssize_t size;               // size of the data read
+    ssize_t size;               // size of the data (tlv)
     socklen_t addrlen;          // size of the addr
-    struct sockaddr_storage addr;   // addr of the sender
+    struct sockaddr_storage addr;   // addr of the sender/reveiver
 };
 
 
