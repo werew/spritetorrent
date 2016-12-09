@@ -43,7 +43,7 @@ void drop_tlv(struct tlv* tlv){
  * @param s A struct sockaddr containing the address
  *        relative to this message
  */
-struct msg* create_msg(size_t size, struct sockaddr s){
+struct msg* create_msg(size_t size, struct sockaddr* s){
     struct msg* m = calloc(1,sizeof(struct msg));
     if (m == NULL) return NULL;
 
@@ -196,7 +196,7 @@ struct tlv* sockaddr2client(const struct sockaddr* s){
                 if((c = create_tlv(2+16)) == NULL) return NULL;
                 tlvset_length(c, 2+16);
                 memcpy(c->data, &IN6(s)->sin6_port,2);
-                memcpy(&c->data[2], &IN(s)->sin6_addr.s6_addr,16);
+                memcpy(&c->data[2], &IN6(s)->sin6_addr.s6_addr,16);
             break;
         default: // Invalid addr type
                 return NULL;

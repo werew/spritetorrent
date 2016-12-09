@@ -3,6 +3,7 @@
 #include <arpa/inet.h>
 #include "debug.h"
 #include "sha256.h"
+#include "network.h"
 
 void printhash(char* hash){
     int i;
@@ -13,7 +14,7 @@ void printhash(char* hash){
 }
 
 void printsockaddr(struct sockaddr* s){
-    char* addr = calloc(50);
+    char* addr = calloc(1,50);
     uint16_t port;
 
     switch (s->sa_family){
@@ -23,7 +24,7 @@ void printsockaddr(struct sockaddr* s){
             break;
         case AF_INET6:
             inet_ntop(AF_INET6,&IN6(s)->sin6_addr.s6_addr, addr, 50);
-            port = ntohs(IN(s)->sin6_port);
+            port = ntohs(IN6(s)->sin6_port);
             break;
         default: puts("Invalid sockaddr type");
     }
