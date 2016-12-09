@@ -3,6 +3,7 @@
 
 
 void printhash(char* hash);
+void printsockaddr(struct sockaddr* s);
 
 
 #endif
