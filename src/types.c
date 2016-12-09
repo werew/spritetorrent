@@ -17,13 +17,15 @@
 
 /**
  * Allocates a struct msg of the good size
- * @param max_length The maximum size of the
- *        data that can be contained
- * @return A pointer to the newly allocated
- *        struct msg
+ * @param size_data The size of the data portion of the tlv
+ * @return A pointer to the newly allocated struct tlv
  */
-struct tlv* create_tlv(uint16_t max_length){
-    struct tlv* tlv = malloc(max_length+4);
+struct tlv* create_tlv(uint16_t size_data){
+    struct tlv* tlv = malloc(SIZE_HEADER_TLV + size_data);
+    if (tlv == NULL) return NULL;
+
+    tlvset_length(tlv, size_data);
+
     return tlv;
 }
 
@@ -39,20 +41,20 @@ void drop_tlv(struct tlv* tlv){
 /**
  * Creates an new struct msg with the given addr
  * and the tlv allocated to the given length
- * @param size Size of the data into the msg
+ * @param size_data  Size of the data into the msg
  * @param s A struct sockaddr containing the address
  *        relative to this message
  */
-struct msg* create_msg(size_t size, struct sockaddr* s){
+struct msg* create_msg(uint16_t size_data, struct sockaddr* s){
     struct msg* m = calloc(1,sizeof(struct msg));
     if (m == NULL) return NULL;
 
-    if ((m->tlv = calloc(1,size)) == NULL) {
+    if ((m->tlv = create_tlv(size_data)) == NULL) {
         free(m);
         return NULL;
     }
 
-    m->size = size;
+    m->size = SIZE_HEADER_TLV + size_data;
     m->addrlen = (s->sa_family == AF_INET)? 
             sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6);
     memcpy(&m->addr, s, m->addrlen);
@@ -188,13 +190,11 @@ struct tlv* sockaddr2client(const struct sockaddr* s){
     switch (s->sa_family){
         case AF_INET: 
                 if((c = create_tlv(2+4)) == NULL) return NULL;
-                tlvset_length(c, 2+4);
                 memcpy(c->data, &IN(s)->sin_port,2);
                 memcpy(&c->data[2], &IN(s)->sin_addr.s_addr,4);
             break;
         case AF_INET6: 
                 if((c = create_tlv(2+16)) == NULL) return NULL;
-                tlvset_length(c, 2+16);
                 memcpy(c->data, &IN6(s)->sin6_port,2);
                 memcpy(&c->data[2], &IN6(s)->sin6_addr.s6_addr,16);
             break;
