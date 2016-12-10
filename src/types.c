@@ -45,7 +45,7 @@ void drop_tlv(struct tlv* tlv){
  * @param s A struct sockaddr containing the address
  *        relative to this message
  */
-struct msg* create_msg(uint16_t size_data, struct sockaddr* s){
+struct msg* create_msg(uint16_t size_data, const struct sockaddr* s){
     struct msg* m = calloc(1,sizeof(struct msg));
     if (m == NULL) return NULL;
 

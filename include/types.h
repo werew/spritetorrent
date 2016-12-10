@@ -62,7 +62,7 @@ struct msg {
 struct tlv* create_tlv(uint16_t size_data);
 void drop_tlv(struct tlv* tlv);
 
-struct msg* create_msg(uint16_t size_data, struct sockaddr* s);
+struct msg* create_msg(uint16_t size_data, const struct sockaddr* s);
 void drop_msg(struct msg* m);
 
 void tlvset_length(struct tlv* tlv, uint16_t length);
