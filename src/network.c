@@ -13,47 +13,28 @@
 #include "types.h"
 #include "network.h"
 
-/**
- * Determine the using version of IP adress
- * passing in argument
- * @param addr: Address to determine the IP version
- * @return AF_INET or AF_INET6
- */
-
-int ip_version(char* addr)
-{
-	//TODO faire fonction
-    return AF_INET; // XXX just not to break the program
-}
-
-struct sockaddr* human2sockaddr(char* addr, uint16_t port){
-	//Determine the version of IP
-	int ip_v = ip_version(addr);
+struct sockaddr* human2sockaddr(const char* addr, uint16_t port){
 
 	struct sockaddr* sockaddr;
-
-	//Setting the sockaddr tracker
-	switch (ip_v) {
-		case AF_INET: 
-			sockaddr = malloc(sizeof(struct sockaddr_in));
+    unsigned long s_addr;
+    
+	if (inet_pton(AF_INET ,addr, &s_addr) != -1){
+			sockaddr = calloc(1,sizeof(struct sockaddr_in));
 			if (sockaddr == NULL) return NULL;
-			IN(&sockaddr)->sin_family = ip_v;
+			IN(&sockaddr)->sin_family = AF_INET;
 			IN(&sockaddr)->sin_port = htons(port);
-			if (inet_pton(ip_v,addr,
-				&IN(&sockaddr)->sin_addr.s_addr) == -1)
-				return NULL;
-			break;
-		case AF_INET6:
-			sockaddr = malloc(sizeof(struct sockaddr_in6));
+			IN(&sockaddr)->sin_addr.s_addr = s_addr;
+    } else {
+			sockaddr = calloc(1,sizeof(struct sockaddr_in6));
 			if (sockaddr == NULL) return NULL;
-			IN6(&sockaddr)->sin6_family = ip_v;
+			IN6(&sockaddr)->sin6_family = AF_INET6;
 			IN6(&sockaddr)->sin6_port = htons(port);
-			if (inet_pton(ip_v,addr,
-				&IN6(&sockaddr)->sin6_addr.s6_addr) == -1)
-				return NULL;
-			break;
-		default: return NULL;
-	}
+			if (inet_pton(AF_INET6, addr,
+				&IN6(&sockaddr)->sin6_addr.s6_addr) == -1){
+                free(sockaddr);
+                return NULL;
+            }
+    }
 
     return sockaddr;
 }
@@ -134,7 +115,8 @@ int init_connection(char* addr, uint16_t port){
 	int sockfd;
 	struct sockaddr_in sockaddr;
 
-	int ip_v=ip_version(addr);
+    // TODO
+	int ip_v = AF_INET;
 
 	//Création socket
 	if ((sockfd = socket(ip_v,SOCK_DGRAM,0)) == -1){
