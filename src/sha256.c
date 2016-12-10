@@ -25,18 +25,21 @@ static const uint32_t K[] = {
 };
 
 void main(){
-    char data1[] = "abc";
-    sha256(data1,3);
-
-    char data2[] = "this is just a test...It would be nice" 
-                   "to have a string much bigger than 512 "
-                   "bits, but I'm a bit lazy...oh wait, I "
-                   "just wrote 140 characters!";
-    sha256(data2,strlen(data2));
-    
+    sha256("testfile",0,-1);
 }
 
-void sha256(void* data, size_t size){
+int sha256(const char* filename, long offset, ssize_t size){
+
+    // Open and set the good position on the file
+    FILE* f = fopen(filename, "r");
+    if (f == NULL) return -1;
+
+    if (fseek(f, offset, SEEK_SET) == -1) {
+        fclose(f);
+        return -1;
+    }
+
+    
 
 
     uint32_t h[8] = { 
@@ -56,16 +59,33 @@ void sha256(void* data, size_t size){
    
     /* Compute hash for all the full 512-bits chunks */ 
     size_t size_left = size;
-    while (size_left >= 64) {
-        memcpy(chunk, data+size-size_left, 64);
+    size_t size_chunk = 0;
+    size_t size_read = 0;
+    while (size == -1 || size_left >= 64) {
+
+        size_chunk = fread(chunk, 1, 64, f);
+
+        size_read += size_chunk;
+
+        if (size_chunk < 64){
+            if (feof(f) == 0) { fclose(f); return -1;}
+            size_left = 0;
+            break;
+        }
+        
         sha256_proc(chunk, h);
         size_left -= 64;
     }
 
-    /* Last chunk */
-    memcpy(chunk, data+size-size_left, size_left);
-
-    size_t size_chunk = size_left; // Better using a meaningfull name
+    // Read remaining data
+    if (size_left != 0){
+        size_chunk = fread(chunk, 1, size_left, f);
+        size_read += size_chunk;
+        if (size_chunk < size_left){
+            if (feof(f) == 0) { fclose(f); return -1;}
+            size_left = 0;
+        }
+    }
 
     /* Padding */
 
@@ -86,7 +106,7 @@ void sha256(void* data, size_t size){
 
     /* Append 8-bytes full data size in bits */
     //XXX htobe64 is not a standard function
-    *(uint64_t*) (chunk + 56) = htobe64((uint64_t) size * 8);
+    *(uint64_t*) (chunk + 56) = htobe64((uint64_t) size_read * 8);
 
     sha256_proc(chunk,h);
     

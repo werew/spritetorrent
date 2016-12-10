@@ -17,7 +17,7 @@
 #define SSIG0(x)  ( ROTR(x,7) ^ ROTR(x,18) ^ ((x) >> 3) )
 #define SSIG1(x)  ( ROTR(x,17) ^ ROTR(x,19) ^ ((x) >> 10) )
 
-void sha256(void* data, size_t s);
+int sha256(const char* filename, long offset, ssize_t size);
 void sha256_proc(void* chk, uint32_t* ph);
 
 #endif
