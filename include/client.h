@@ -7,7 +7,7 @@
 struct request {
     struct msg* msg;            // The body of the request
     time_t timestamp;           // When was it last done
-    int nb_deliv;               // Number of times it was sent
+    int attempts;               // Number of times it was sent
     struct request* next;       
 };
 
@@ -59,4 +59,11 @@ int ka_gen(st_ctask ctask);
 int poll_runupdate(st_ctask ctask);
 int handle_msg(st_ctask ctask, struct msg* m);
 int st_addtracker(st_ctask ctask, const char* addr, uint16_t port);
+
+
+int st_put(st_ctask ctask, const char* filename);
+int _put_t(st_ctask ctask, const struct sockaddr* tracker, 
+           const char* hash, struct sockaddr* local);
+int send_req(st_ctask ctask, struct request* req);
+
 #endif

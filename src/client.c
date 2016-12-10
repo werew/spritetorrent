@@ -123,6 +123,57 @@ int st_cstart(st_ctask ctask){
     return 0; 
 }
 
+
+int send_req(st_ctask ctask, struct request* req){
+    time_t t = time(NULL);
+    if (t == -1 || send_msg(ctask->sockfd, req->msg) == -1) return -1;
+    req->timestamp = t;
+    req->attempts++;
+    return 0;
+}
+
+int _put_t(st_ctask ctask, const struct sockaddr* tracker, 
+           const char* hash, struct sockaddr* local){
+
+    uint16_t size_addr = (local->sa_family == AF_INET)? 4:16; 
+
+    // Create msg of type PUT: 
+    // [FILE_HASH LEN HASH][CLIENT LEN PORT ADDR]
+    struct msg* m = create_msg(SIZE_HEADER_TLV*2 + 
+                               SHA256_HASH_SIZE  + 
+                               2 + size_addr , tracker);
+    if (m == NULL) return -1;
+
+    /** Fill message **/
+    m->tlv->type = PUT_T;
+
+    // hash
+    struct tlv* tlv_hash = (struct tlv*) m->tlv->data;
+    tlv_hash->type = FILE_HASH;
+    tlvset_length(tlv_hash, SHA256_HASH_SIZE);
+    memcpy(tlv_hash->data, hash, SHA256_HASH_SIZE);
+    
+    // client
+    struct tlv* tlv_client = (struct tlv*)
+                             &tlv_hash->data[SHA256_HASH_SIZE];
+    struct tlv* tmp = sockaddr2client(local);
+    if (tmp == NULL) goto err_1;
+    memcpy(tlv_client, tmp, SIZE_HEADER_TLV+2+size_addr);
+    drop_tlv(tmp);
+   
+    // Build and send request 
+    struct request* put_req = calloc(1,sizeof(struct request));
+    if (put_req == NULL) goto err_1;
+    put_req->msg = m;
+    if (send_req(ctask, put_req) == -1) goto err_1;
+    
+    return 0;
+
+err_1:
+    drop_msg(m);
+    return -1;
+}
+
 int st_put(st_ctask ctask, const char* filename){
     // Put to the tracker
 
@@ -130,9 +181,21 @@ int st_put(st_ctask ctask, const char* filename){
     char hash[SHA256_HASH_SIZE];
     if (sha256(hash,filename,0,-1) == -1) return -1;
 
-    
+    struct host* local   = NULL;
+    struct host* tracker = ctask->trackers;
 
-    //struct msg* m = create_msg(
+    while (tracker != NULL){
+        local = ctask->locals; 
+        while (local != NULL){
+            if (_put_t(ctask, tracker->addr, 
+                       hash, local->addr) == -1){
+               return -1; 
+            }
+            local = local->next;
+        }
+        tracker = tracker->next;
+    }
+
     return 0;    
 }
 
@@ -183,11 +246,13 @@ int st_addlocal(st_ctask ctask, const char* addr, uint16_t port){
 
 int main(int argc, char* argv[]){
 
-    st_ctask ctask = st_create_ctask(5555, 10);
+    st_ctask ctask = st_create_ctask(2222, 10);
     if (ctask == NULL) fail("st_create_ctask");
 
-    st_addtracker(ctask,"127.0.0.1",2222);
-    st_addlocal(ctask,"127.0.0.1",5555);
+    st_addtracker(ctask,"127.0.0.1",5555);
+    st_addlocal(ctask,"127.0.0.1",2222);
+
+    st_put(ctask, "/etc/passwd");
 
     st_cstart(ctask);
 

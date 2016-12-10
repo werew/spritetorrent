@@ -21,16 +21,16 @@ struct sockaddr* human2sockaddr(const char* addr, uint16_t port){
 	if (inet_pton(AF_INET ,addr, &s_addr) != -1){
 			sockaddr = calloc(1,sizeof(struct sockaddr_in));
 			if (sockaddr == NULL) return NULL;
-			IN(&sockaddr)->sin_family = AF_INET;
-			IN(&sockaddr)->sin_port = htons(port);
-			IN(&sockaddr)->sin_addr.s_addr = s_addr;
+			IN(sockaddr)->sin_family = AF_INET;
+			IN(sockaddr)->sin_port = htons(port);
+			IN(sockaddr)->sin_addr.s_addr = s_addr;
     } else {
 			sockaddr = calloc(1,sizeof(struct sockaddr_in6));
 			if (sockaddr == NULL) return NULL;
-			IN6(&sockaddr)->sin6_family = AF_INET6;
-			IN6(&sockaddr)->sin6_port = htons(port);
+			IN6(sockaddr)->sin6_family = AF_INET6;
+			IN6(sockaddr)->sin6_port = htons(port);
 			if (inet_pton(AF_INET6, addr,
-				&IN6(&sockaddr)->sin6_addr.s6_addr) == -1){
+				&IN6(sockaddr)->sin6_addr.s6_addr) == -1){
                 free(sockaddr);
                 return NULL;
             }
