@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <string.h>
 #include <endian.h>
+#include <arpa/inet.h>
 #include "sha256.h"
 
 
@@ -24,11 +26,39 @@ static const uint32_t K[] = {
     0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2,
 };
 
-void main(){
-    sha256("testfile",0,-1);
+
+void sha256_to_string(char* dest, const char* hash){
+
+    size_t count = 0;
+    for(count = 0; count < 32; count++) {
+        sprintf(dest, "%02hhx", hash[count]);
+        printf("%02hhx\n", hash[count]);
+        dest += 2;
+    }
 }
 
-int sha256(const char* filename, long offset, ssize_t size){
+
+
+void string_to_sha256(unsigned char* dest, const char* hexstring){
+
+    size_t count = 0;
+    for(count = 0; count < 64; count++) {
+        sscanf(hexstring, "%02hhx", &dest[count]);
+        hexstring += 2;
+    }
+}
+
+
+/**
+ * Forge the hash of a file.
+ * @param dest Destination buffer
+ * @param filename File to read
+ * @param offset Offset from where to read
+ * @param size How much data (-1 means all)
+ * @return 0 in case of success, -1 otherwise
+ */
+int sha256(char dest[SHA256_HASH_SIZE], 
+const char* filename, long offset, ssize_t size){
 
     // Open and set the good position on the file
     FILE* f = fopen(filename, "r");
@@ -40,8 +70,6 @@ int sha256(const char* filename, long offset, ssize_t size){
     }
 
     
-
-
     uint32_t h[8] = { 
         0x6a09e667,
         0xbb67ae85,
@@ -105,15 +133,16 @@ int sha256(const char* filename, long offset, ssize_t size){
     while(size_chunk < 56) chunk[size_chunk++] = 0x00;
 
     /* Append 8-bytes full data size in bits */
-    //XXX htobe64 is not a standard function
     *(uint64_t*) (chunk + 56) = htobe64((uint64_t) size_read * 8);
 
     sha256_proc(chunk,h);
-    
-    // At this point the digest should be ready (TODO translate to big endian)
-    puts("HASH:");
-    printf("%x %x %x %x %x %x %x %x\n",h[0],h[1],h[2],h[3],h[4],h[5],h[6],h[7]);
-   
+
+    int i;
+    for (i=0; i<8; i++) h[i] = htonl(h[i]);
+      
+    memcpy(dest, h, SHA256_HASH_SIZE);
+
+    return 0;
 }
 
 

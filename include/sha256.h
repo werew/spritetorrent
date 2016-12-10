@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 /* Size of an hash in bytes */
-#define SHA256_HASH_SIZE 64
+#define SHA256_HASH_SIZE 32
 
 /* SHA-256 Operations (on 32 bits words) */
 // TODO move to sha256.c (no need to have them here)
@@ -17,7 +17,9 @@
 #define SSIG0(x)  ( ROTR(x,7) ^ ROTR(x,18) ^ ((x) >> 3) )
 #define SSIG1(x)  ( ROTR(x,17) ^ ROTR(x,19) ^ ((x) >> 10) )
 
-int sha256(const char* filename, long offset, ssize_t size);
+int sha256(char dest[SHA256_HASH_SIZE], const char* filename, long offset, ssize_t size);
 void sha256_proc(void* chk, uint32_t* ph);
+void string_to_sha256(unsigned char* dest, const char* string);
+void sha256_to_string(char* dest, const char* hash);
 
 #endif
