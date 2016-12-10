@@ -15,7 +15,8 @@ struct request {
 #define SIZE_HTABLE 100
 typedef struct ctask {
     int sockfd;                 // Socket from where to listen
-    time_t timeout;             // Keep alive frequency
+    time_t timeout;             // Update frequency
+    time_t lastupdate;          // Time of the last update
     struct request* req_poll;   // All the running requests
     void* htable[SIZE_HTABLE];  // Hash table
 } *st_ctask;
@@ -48,5 +49,12 @@ struct c_seed {
 
 
 st_ctask st_create_ctask(uint16_t port, time_t timeout);
+
+int st_cstart(st_ctask ctask);
+int st_cwork(st_ctask ctask);
+
+int ka_gen(st_ctask ctask);
+int poll_runupdate(st_ctask ctask);
+int handle_msg(st_ctask ctask, struct msg* m);
 
 #endif
