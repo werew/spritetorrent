@@ -17,6 +17,7 @@ typedef struct ctask {
     int sockfd;                 // Socket from where to listen
     time_t timeout;             // Update frequency
     time_t lastupdate;          // Time of the last update
+    struct host* locals;        // Local addresses to declare
     struct host* trackers;      // Trakers availables 
     struct request* req_poll;   // All the running requests
     void* htable[SIZE_HTABLE];  // Hash table

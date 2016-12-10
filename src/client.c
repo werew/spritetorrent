@@ -125,8 +125,12 @@ int st_cstart(st_ctask ctask){
 
 int st_put(st_ctask ctask, const char* filename){
     // Put to the tracker
+
+    // Generate hash of the file
     char hash[SHA256_HASH_SIZE];
     if (sha256(hash,filename,0,-1) == -1) return -1;
+
+    
 
     //struct msg* m = create_msg(
     return 0;    
@@ -155,14 +159,35 @@ int st_addtracker(st_ctask ctask, const char* addr, uint16_t port){
     ctask->trackers = tracker;
 
     return 0; 
-
 }
+
+
+int st_addlocal(st_ctask ctask, const char* addr, uint16_t port){
+    
+    struct sockaddr* sockaddr = human2sockaddr(addr, port);
+    if (sockaddr == NULL) return -1;
+    
+    struct host* localaddr = malloc(sizeof(struct host));
+    if (localaddr == NULL) {
+        free(sockaddr);
+        return -1;
+    }
+
+    localaddr->addr = sockaddr;
+    localaddr->next = ctask->locals;
+    ctask->locals = localaddr;
+    return 0; 
+}
+
 
 
 int main(int argc, char* argv[]){
 
     st_ctask ctask = st_create_ctask(5555, 10);
     if (ctask == NULL) fail("st_create_ctask");
+
+    st_addtracker(ctask,"127.0.0.1",2222);
+    st_addlocal(ctask,"127.0.0.1",5555);
 
     st_cstart(ctask);
 
