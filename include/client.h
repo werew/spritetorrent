@@ -16,9 +16,9 @@ struct request {
 typedef struct ctask {
     int sockfd;                 // Socket from where to listen
     time_t timeout;             // Keep alive frequency
-    struct request* req_poll    // All the running requests
+    struct request* req_poll;   // All the running requests
     void* htable[SIZE_HTABLE];  // Hash table
-} *st_ttask;
+} *st_ctask;
 
     
 /******* Seeds, seeders and chunks *******/
@@ -34,7 +34,7 @@ struct chunk {
     char hash[SHA256_HASH_SIZE]; // Hash of the chunk
     int status;                  // ready/busy/empty
     int index;                   // Position into the file
-    struct seeder* seeders       // Pointers to the seeders 
+    struct seeder* seeders;       // Pointers to the seeders 
 };
 
 
@@ -47,6 +47,6 @@ struct c_seed {
 };
 
 
-st_ttask st_create_ctask(uint16_t port, time_t timeout);
+st_ctask st_create_ctask(uint16_t port, time_t timeout);
 
 #endif

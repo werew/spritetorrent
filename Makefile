@@ -15,9 +15,14 @@ INCLUDES := $(INCDIR)/*.h
 OBJECTS := $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o) 
 DEP = $(OBJECTS:%.o=%.d)
 
-all: bin/tracker 
+all: bin/tracker bin/client
 
 bin/tracker: obj/tracker.o obj/network.o obj/types.o obj/debug.o
+	@echo "\n-----------------> Linking ... "
+	@mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) $^ -o $@
+
+bin/client: obj/client.o obj/network.o obj/types.o obj/debug.o
 	@echo "\n-----------------> Linking ... "
 	@mkdir -p $(BINDIR)
 	$(CC) $(CFLAGS) $^ -o $@
