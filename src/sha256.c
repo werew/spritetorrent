@@ -115,6 +115,8 @@ const char* filename, long offset, ssize_t size){
         }
     }
 
+    fclose(f);
+
     /* Padding */
 
     /* Append 1-bit */ 
