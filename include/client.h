@@ -17,6 +17,7 @@ typedef struct ctask {
     int sockfd;                 // Socket from where to listen
     time_t timeout;             // Update frequency
     time_t lastupdate;          // Time of the last update
+    struct host* trackers;      // Trakers availables 
     struct request* req_poll;   // All the running requests
     void* htable[SIZE_HTABLE];  // Hash table
 } *st_ctask;
@@ -24,10 +25,10 @@ typedef struct ctask {
     
 /******* Seeds, seeders and chunks *******/
 
-/* A cell of a list of seeders */
-struct c_seeder {
-    struct sockaddr* addr; // Net infos (addr, port, ...)
-    struct seeder* next;   // Next seeder of the list
+/* A cell of a list of hosts  */
+struct host {
+    struct sockaddr* addr;   // Net infos (addr, port, ...)
+    struct host* next;   // Next seeder of the list
 };
 
 
@@ -35,7 +36,7 @@ struct chunk {
     char hash[SHA256_HASH_SIZE]; // Hash of the chunk
     int status;                  // ready/busy/empty
     int index;                   // Position into the file
-    struct seeder* seeders;       // Pointers to the seeders 
+    struct host* seeders;       // Pointers to the seeders 
 };
 
 
@@ -43,7 +44,7 @@ struct c_seed {
     char hash[SHA256_HASH_SIZE]; // Hash of the file
     char filename[256];          // Path to the file
     struct chunk* chunks;        // List of the chunks
-    struct c_seeder* seeders;    // List of seeders sharing the file
+    struct host* seeders;    // List of seeders sharing the file
     struct c_seed* next;         // Next hash of the list
 };
 
@@ -56,5 +57,5 @@ int st_cwork(st_ctask ctask);
 int ka_gen(st_ctask ctask);
 int poll_runupdate(st_ctask ctask);
 int handle_msg(st_ctask ctask, struct msg* m);
-
+int st_addtracker(st_ctask ctask, const char* addr, uint16_t port);
 #endif

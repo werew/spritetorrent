@@ -22,7 +22,8 @@ bin/tracker: obj/tracker.o obj/network.o obj/types.o obj/debug.o
 	@mkdir -p $(BINDIR)
 	$(CC) $(CFLAGS) $^ -o $@
 
-bin/client: obj/client.o obj/network.o obj/types.o obj/debug.o
+bin/client: obj/client.o obj/network.o obj/types.o obj/debug.o \
+            obj/sha256.o
 	@echo "\n-----------------> Linking ... "
 	@mkdir -p $(BINDIR)
 	$(CC) $(CFLAGS) $^ -o $@

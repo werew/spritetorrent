@@ -15,6 +15,7 @@
 #include "types.h"
 #include "network.h"
 #include "client.h"
+#include "sha256.h"
 #include "debug.h"
 
 
@@ -122,11 +123,48 @@ int st_cstart(st_ctask ctask){
     return 0; 
 }
 
+int st_put(st_ctask ctask, const char* filename){
+    // Put to the tracker
+    char hash[SHA256_HASH_SIZE];
+    if (sha256(hash,filename,0,-1) == -1) return -1;
+
+    //struct msg* m = create_msg(
+    return 0;    
+}
+
+int st_get(st_ctask ctask, const char hash[SHA256_HASH_SIZE], 
+const char* filename){
+    // Get from tracker
+    // Get from clients
+    return 0;
+}
+
+int st_addtracker(st_ctask ctask, const char* addr, uint16_t port){
+    
+    struct sockaddr* sockaddr = human2sockaddr(addr, port);
+    if (sockaddr == NULL) return -1;
+    
+    struct host* tracker = malloc(sizeof(struct host));
+    if (tracker == NULL) {
+        free(sockaddr);
+        return -1;
+    }
+
+    tracker->addr = sockaddr;
+    tracker->next = ctask->trackers;
+    ctask->trackers = tracker;
+
+    return 0; 
+
+}
+
 
 int main(int argc, char* argv[]){
 
     st_ctask ctask = st_create_ctask(5555, 10);
     if (ctask == NULL) fail("st_create_ctask");
+
+    st_cstart(ctask);
 
     return 0;
 }
