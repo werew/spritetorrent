@@ -48,25 +48,10 @@ void string_to_sha256(unsigned char* dest, const char* hexstring){
 }
 
 
-/**
- * Forge the hash of a file.
- * @param dest Destination buffer
- * @param filename File to read
- * @param offset Offset from where to read
- * @param size How much data (-1 means all)
- * @return 0 in case of success, -1 otherwise
- */
-int sha256(char dest[SHA256_HASH_SIZE], 
-const char* filename, long offset, ssize_t size){
+int fsha256(char dest[SHA256_HASH_SIZE], FILE* f,
+            long offset, ssize_t size){
 
-    // Open and set the good position on the file
-    FILE* f = fopen(filename, "r");
-    if (f == NULL) return -1;
-
-    if (fseek(f, offset, SEEK_SET) == -1) {
-        fclose(f);
-        return -1;
-    }
+    if (fseek(f, offset, SEEK_SET) == -1) return -1;
 
     
     uint32_t h[8] = { 
@@ -95,7 +80,7 @@ const char* filename, long offset, ssize_t size){
         size_read += size_chunk;
 
         if (size_chunk < 64){
-            if (feof(f) == 0) { fclose(f); return -1;}
+            if (feof(f) == 0) return -1;
             size_left = 0;
             break;
         }
@@ -109,12 +94,10 @@ const char* filename, long offset, ssize_t size){
         size_chunk = fread(chunk, 1, size_left, f);
         size_read += size_chunk;
         if (size_chunk < size_left){
-            if (feof(f) == 0) { fclose(f); return -1;}
+            if (feof(f) == 0) return -1;
             size_left = 0;
         }
     }
-
-    fclose(f);
 
     /* Padding */
 
@@ -144,6 +127,29 @@ const char* filename, long offset, ssize_t size){
     memcpy(dest, h, SHA256_HASH_SIZE);
 
     return 0;
+}
+
+/**
+ * Forge the hash of a file.
+ * @param dest Destination buffer
+ * @param filename File to read
+ * @param offset Offset from where to read
+ * @param size How much data (-1 means all)
+ * @return 0 in case of success, -1 otherwise
+ */
+int sha256(char dest[SHA256_HASH_SIZE], 
+const char* filename, long offset, ssize_t size){
+
+    // Open and set the good position on the file
+    FILE* f = fopen(filename, "r");
+    if (f == NULL) return -1;
+
+    int ret = fsha256(dest,f,offset,size);
+    
+    fclose(f);
+
+    return ret;
+
 }
 
 
