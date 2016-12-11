@@ -6,11 +6,9 @@
 #include "network.h"
 
 void printhash(char* hash){
-    int i;
-    for (i=0;i<SHA256_HASH_SIZE;i++){
-        printf("%x",hash[i]);
-    }
-    printf("\n");
+    char str[100];
+    sha256_to_string(str, hash);
+    printf("%s\n",str);
 }
 
 void printsockaddr(struct sockaddr* s){

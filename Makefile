@@ -17,7 +17,8 @@ DEP = $(OBJECTS:%.o=%.d)
 
 all: bin/tracker bin/client
 
-bin/tracker: obj/tracker.o obj/network.o obj/types.o obj/debug.o
+bin/tracker: obj/tracker.o obj/network.o obj/types.o obj/debug.o \
+             obj/sha256.o
 	@echo "\n-----------------> Linking ... "
 	@mkdir -p $(BINDIR)
 	$(CC) $(CFLAGS) $^ -o $@

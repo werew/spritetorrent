@@ -32,7 +32,6 @@ void sha256_to_string(char* dest, const char* hash){
     size_t count = 0;
     for(count = 0; count < 32; count++) {
         sprintf(dest, "%02hhx", hash[count]);
-        printf("%02hhx\n", hash[count]);
         dest += 2;
     }
 }

@@ -209,6 +209,11 @@ int h_put_t(st_ttask ttask, struct msg* m){
         return -1;
     }
 
+    // DEBUG
+    puts("---->received PUT_T");
+    printsockaddr((struct sockaddr*) &m->addr);
+    printhash(hash->data);
+
 
     // Get the htable index and then search the seed
     unsigned int hti = htable_index(hash->data,hlength);
