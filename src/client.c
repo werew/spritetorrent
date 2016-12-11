@@ -102,6 +102,7 @@ int handle_msg(st_ctask ctask, struct msg* m){
 
 
 void rm_answered(st_ctask ctask, struct msg* m){
+    // Look at the corresponding type of request
     char req_type;
     switch (m->tlv->type){
         case REP_LIST: req_type = LIST;
@@ -116,6 +117,7 @@ void rm_answered(st_ctask ctask, struct msg* m){
             return;
     }
 
+    // Scan the poll for the corresponding request
     struct request* prev = NULL;
     struct request* current = ctask->req_poll;
      
@@ -137,12 +139,10 @@ void rm_answered(st_ctask ctask, struct msg* m){
                     
                     printf("Matched data\n");
 
-                    if (prev == NULL){
-                        ctask->req_poll = current->next;
-                    } else {
-                        prev->next = current->next;
-                    }
+                    if (prev == NULL) ctask->req_poll = current->next;
+                    else  prev->next = current->next;
 
+                    // Request fond ! We can drop it !
                     drop_msg(current->msg);
                     free(current);
                 }
@@ -257,12 +257,41 @@ err_1:
     return -1;
 }
 
-int st_put(st_ctask ctask, const char* filename){
-    // Put to the tracker
 
-    // Generate hash of the file
-    char hash[SHA256_HASH_SIZE];
-    if (sha256(hash,filename,0,-1) == -1) return -1;
+
+struct chunk* make_chunkslist(const char* filename){
+    return NULL;
+}
+
+
+
+
+
+
+int st_put(st_ctask ctask, const char* filename){
+    /********* Store locally: make a seed **********/
+
+    struct c_seed* s = calloc(1,sizeof (struct c_seed));
+    if (s == NULL) return -1;
+
+    // File hash
+    if (sha256(s->hash,filename,0,-1) == -1) goto err_1;
+
+    // File name
+    s->filename = strdup(filename);
+    if (s->filename == NULL) goto err_1;
+
+    // Chunks
+    s->chunks = make_chunkslist(filename);
+    if (s->filename == NULL) goto err_2;
+
+    // Push into htable
+    unsigned int hti = htable_index(s->hash,SHA256_HASH_SIZE);
+    s->next = ctask->htable[hti];
+    ctask->htable[hti] = s;
+
+
+    /*************** Send message PUT_T ***********/
 
     struct host* local   = NULL;
     struct host* tracker = ctask->trackers;
@@ -271,7 +300,7 @@ int st_put(st_ctask ctask, const char* filename){
         local = ctask->locals; 
         while (local != NULL){
             if (_put_t(ctask, tracker->addr, 
-                       hash, local->addr) == -1){
+                       s->hash, local->addr) == -1){
                return -1; 
             }
             local = local->next;
@@ -280,7 +309,21 @@ int st_put(st_ctask ctask, const char* filename){
     }
 
     return 0;    
+
+err_2:
+    free(s->filename);
+err_1:
+    free(s);
+    return -1;
 }
+
+
+
+
+
+
+
+
 
 int st_get(st_ctask ctask, const char hash[SHA256_HASH_SIZE], 
 const char* filename){

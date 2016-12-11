@@ -2,10 +2,10 @@
 #define _TRACKER_H_
 
 #include "sha256.h"
+#include "types.h"
 
 /*******    Tracker Task   ********/
 
-#define SIZE_HTABLE 100
 typedef struct ttask {
     int sockfd;                 // Socket from where to listen
     unsigned int hosts_count;   // Number of connected hosts

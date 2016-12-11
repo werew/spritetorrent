@@ -58,6 +58,7 @@ struct msg {
 };
 
 
+#define SIZE_HTABLE 100
 
 struct tlv* create_tlv(uint16_t size_data);
 void drop_tlv(struct tlv* tlv);
@@ -75,6 +76,6 @@ int sockaddr_cmp(struct sockaddr* addr1, struct sockaddr* addr2);
 struct sockaddr* client2sockaddr(const struct tlv* c);
 struct tlv* sockaddr2client(const struct sockaddr* s);
 
-
+unsigned int htable_index(const char* data, size_t length);
 
 #endif

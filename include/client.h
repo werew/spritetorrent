@@ -20,7 +20,7 @@ typedef struct ctask {
     struct host* locals;        // Local addresses to declare
     struct host* trackers;      // Trakers availables 
     struct request* req_poll;   // All the running requests
-    void* htable[SIZE_HTABLE];  // Hash table
+    struct c_seed* htable[SIZE_HTABLE];  // Hash table
 } *st_ctask;
 
     
@@ -33,19 +33,25 @@ struct host {
 };
 
 
+
+typedef enum {
+    AVAILABLE,
+    BUSY,
+    EMPTY
+} chunk_status;
+
 struct chunk {
     char hash[SHA256_HASH_SIZE]; // Hash of the chunk
-    int status;                  // ready/busy/empty
+    chunk_status status;         // ready/busy/empty
     int index;                   // Position into the file
-    struct host* seeders;       // Pointers to the seeders 
+    struct host* seeders;        // Pointers to the seeders 
 };
-
 
 struct c_seed {
     char hash[SHA256_HASH_SIZE]; // Hash of the file
-    char filename[256];          // Path to the file
+    char* filename;              // Path to the file
     struct chunk* chunks;        // List of the chunks
-    struct host* seeders;    // List of seeders sharing the file
+    struct host* seeders;        // List of seeders sharing the file
     struct c_seed* next;         // Next hash of the list
 };
 

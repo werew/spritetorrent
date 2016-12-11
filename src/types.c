@@ -239,3 +239,17 @@ struct tlv* sockaddr2client(const struct sockaddr* s){
     c->type = CLIENT;
     return c;
 }
+
+
+/* FNV-1a hash */
+unsigned int htable_index(const char* data, size_t length){
+    unsigned int hash = 2166136261 % SIZE_HTABLE;
+    size_t i;
+    for (i = 0; i < length; i++) {
+        hash ^= data[i];
+        hash *= 16777619;
+        hash %= SIZE_HTABLE;
+    }
+    return hash;
+}
+
