@@ -83,8 +83,81 @@ int st_cwork(st_ctask ctask){
 
 int handle_msg(st_ctask ctask, struct msg* m){
     puts("Handle msg");
+    switch (m->tlv->type){
+        case GET: puts("Get chunk");
+            break;
+        case LIST: puts("List");
+            break;
+        case REP_LIST:
+        case ACK_PUT: 
+        case ACK_GET: 
+        case ACK_KEEP_ALIVE: rm_answered(ctask, m);
+            break;
+        default: puts("Bad msg type");
+    }
     return 0;
 }
+
+
+
+
+void rm_answered(st_ctask ctask, struct msg* m){
+    char req_type;
+    switch (m->tlv->type){
+        case REP_LIST: req_type = LIST;
+            break;
+        case ACK_PUT:  req_type = PUT_T;
+            break;
+        case ACK_GET:  req_type = GET;
+            break;
+        case ACK_KEEP_ALIVE: req_type = KEEP_ALIVE;
+            break;
+        default: puts("Bad msg type");
+            return;
+    }
+
+    struct request* prev = NULL;
+    struct request* current = ctask->req_poll;
+     
+    while (current != NULL){
+
+        if (req_type == current->msg->tlv->type){
+
+            // Debug    
+            printf("Compare addr\n");
+            printsockaddr((struct sockaddr*) &m->addr);
+            printsockaddr((struct sockaddr*) &current->msg->addr);
+
+            if (sockaddr_cmp((struct sockaddr*) &m->addr,        
+               (struct sockaddr*) &current->msg->addr) == 1){
+
+                printf("Matched addr\n");
+                if (tlv_cmp((struct tlv*) current->msg->tlv->data,
+                        (struct tlv*) m->tlv->data) == 1){
+                    
+                    printf("Matched data\n");
+
+                    if (prev == NULL){
+                        ctask->req_poll = current->next;
+                    } else {
+                        prev->next = current->next;
+                    }
+
+                    drop_msg(current->msg);
+                    free(current);
+                }
+
+            }
+        }
+
+        prev = current;
+        current = current->next;
+    }
+}
+
+
+
+
 
 int poll_runupdate(st_ctask ctask){
     puts("Update POLL");
@@ -132,6 +205,11 @@ int send_req(st_ctask ctask, struct request* req){
     return 0;
 }
 
+void push_req(st_ctask ctask, struct request* req){
+    req->next = ctask->req_poll;
+    ctask->req_poll = req;
+}
+
 int _put_t(st_ctask ctask, const struct sockaddr* tracker, 
            const char* hash, struct sockaddr* local){
 
@@ -161,12 +239,17 @@ int _put_t(st_ctask ctask, const struct sockaddr* tracker,
     memcpy(tlv_client, tmp, SIZE_HEADER_TLV+2+size_addr);
     drop_tlv(tmp);
    
+
     // Build and send request 
     struct request* put_req = calloc(1,sizeof(struct request));
     if (put_req == NULL) goto err_1;
     put_req->msg = m;
-    if (send_req(ctask, put_req) == -1) goto err_1;
-    
+
+    // Push req into the poll
+    push_req(ctask, put_req);
+
+    if (send_req(ctask, put_req) == -1) return -1;
+
     return 0;
 
 err_1:

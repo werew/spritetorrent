@@ -69,6 +69,8 @@ void tlvset_length(struct tlv* tlv, uint16_t length);
 uint16_t tlvget_length(const struct tlv* tlv);
 
 int validate_tlv(struct tlv* msg, unsigned int nargs);
+int tlv_cmp(struct tlv* t1, struct tlv* t2);
+int sockaddr_cmp(struct sockaddr* addr1, struct sockaddr* addr2);
 
 struct sockaddr* client2sockaddr(const struct tlv* c);
 struct tlv* sockaddr2client(const struct sockaddr* s);

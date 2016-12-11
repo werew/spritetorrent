@@ -14,7 +14,41 @@
 #include "network.h"
 
 
+int sockaddr_cmp(struct sockaddr* addr1, struct sockaddr* addr2){
 
+    if (addr1->sa_family == AF_INET){
+
+        if (IN(addr1)->sin_port != IN(addr2)->sin_port ||
+            IN(addr1)->sin_addr.s_addr != IN(addr2)->sin_addr.s_addr 
+           ) return 0;
+
+    } else if (addr1->sa_family == AF_INET6){
+
+        if (IN6(addr1)->sin6_port != IN6(addr2)->sin6_port) return 0;
+        if (memcmp(&IN6(addr1)->sin6_addr, &IN6(addr2)->sin6_addr,
+            sizeof(struct in6_addr)) != 0) return 0;
+
+    } else return -1;
+
+    return 1;
+}    
+
+int tlv_cmp(struct tlv* t1, struct tlv* t2){
+
+    if (t1->type != t2->type) return 0;
+
+    uint16_t len1 = tlvget_length(t1);
+    uint16_t len2 = tlvget_length(t2);
+
+    if (len1 != len2) return 0;
+
+    if (memcmp(t1->data, t2->data, len1) != 0) return 0;
+
+
+    return 1;
+}
+
+    
 /**
  * Allocates a struct msg of the good size
  * @param size_data The size of the data portion of the tlv

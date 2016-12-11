@@ -58,6 +58,7 @@ int st_cwork(st_ctask ctask);
 int ka_gen(st_ctask ctask);
 int poll_runupdate(st_ctask ctask);
 int handle_msg(st_ctask ctask, struct msg* m);
+void rm_answered(st_ctask ctask, struct msg* m);
 int st_addtracker(st_ctask ctask, const char* addr, uint16_t port);
 
 
