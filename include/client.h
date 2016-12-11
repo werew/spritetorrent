@@ -40,11 +40,15 @@ typedef enum {
     EMPTY
 } chunk_status;
 
+
+#define CHUNK_SIZE 700 //(1024*1024) // 1 Mb
+
 struct chunk {
     char hash[SHA256_HASH_SIZE]; // Hash of the chunk
     chunk_status status;         // ready/busy/empty
     int index;                   // Position into the file
     struct host* seeders;        // Pointers to the seeders 
+    struct chunk* next;
 };
 
 struct c_seed {

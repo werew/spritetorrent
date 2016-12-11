@@ -260,7 +260,36 @@ err_1:
 
 
 struct chunk* make_chunkslist(const char* filename){
-    return NULL;
+
+    FILE* f = fopen(filename, "r");
+    if (f == NULL) return NULL;
+
+    int index = 0;
+    struct chunk* list = calloc(1,sizeof(struct chunk));
+    struct chunk* chunk = list;
+    
+    while (1) {
+
+        if (chunk == NULL) return NULL; // TODO free other chunks
+        
+        if (fsha256(chunk->hash, f, 
+            CHUNK_SIZE*index, CHUNK_SIZE) == -1) return NULL; // XXX
+
+        printhash(chunk->hash);
+
+        chunk->index = index++; 
+        chunk->status = AVAILABLE;
+
+        if (feof(f) != 0) break;
+
+        chunk->next = calloc(1,sizeof(struct chunk));
+        chunk = chunk->next;
+
+    }
+
+    fclose(f);
+
+    return list;
 }
 
 
