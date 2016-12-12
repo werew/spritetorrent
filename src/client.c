@@ -452,8 +452,8 @@ int handle_ack_get(struct in_trasmission* it, struct msg* m){
             free(addr_seeder);
             return -1;
         }
-
-
+    
+        s->addr = addr_seeder;
         s->next = it->seeders;
         it->seeders = s;
 
@@ -516,7 +516,33 @@ int get_t(struct sockaddr* tracker, struct in_trasmission* it){
 }
 
 
+int list(struct in_trasmission* it){
+    if (it->seeders == NULL) return 0;
 
+    struct sockaddr* seeder = it->seeders->addr;
+    struct msg* m = create_msg(SIZE_HEADER_TLV+
+                    SHA256_HASH_SIZE,seeder);
+    if (m == NULL) return -1;
+
+    // Fill msg body
+    m->tlv->type = LIST;
+    struct tlv* hash = (struct tlv*) m->tlv->data;
+    hash->type = FILE_HASH;
+    memcpy(hash->data, it->hash, SHA256_HASH_SIZE);
+
+    // Send LIST msg
+    if (send_msg(it->sockfd, m) == -1){
+        drop_msg(m);
+        return -1;
+    }
+    
+
+    // Handle answer
+    struct msg* answer = accept_msg(it->sockfd);
+    if (answer ==  NULL) return -1;
+
+    return 0;
+}
 
 
 
@@ -529,10 +555,12 @@ int st_get(st_ctask ctask, const char hash[SHA256_HASH_SIZE]){
     memcpy(it.hash,hash,SHA256_HASH_SIZE);
 
     // Get clients
-    struct host* tracker = ctask->trackers;
+    struct host* tracker = ctask->trackers; // XXX use all
     if (get_t(tracker->addr, &it) == -1) return -1;
 
-    // Start transmission
+    // Get chunks
+    list(&it);
+    
 
     return 0;
 }
