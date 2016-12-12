@@ -161,12 +161,98 @@ int handle_msg(st_ctask ctask, struct msg* m){
     return 0;
 }
 
+struct c_seed* search_hash_c
+(struct c_seed* list, const char* hash){
+    puts("Start search hash");//
+    while (list != NULL){
+        printf("Compare: "); //
+        printhash(list->hash);//
+        if (memcmp(list->hash,hash,SHA256_HASH_SIZE) == 0){
+            puts("Found");//
+            return list;
+        }
+        list = list->next;
+    }
+    puts("Not found");//
+    return NULL;
+}
+
+int rep_list(struct ctask* ctask, struct msg* m){
+
+    // Get file hash
+    struct tlv* hash = (struct tlv*) m->tlv->data;
+    if (hash->type == FILE_HASH) return -1;
+
+    // Search into the htable 
+    int idx = htable_index(m->tlv->data, SHA256_HASH_SIZE);
+    struct c_seed* s = search_hash_c(ctask->htable[idx],hash->data);
+    if (s == NULL) return -1;
+    
+    // Chunks (they are stored inside the seed_c)
+    void* chunklist;
+    ssize_t size_chunklist = chunks2chunklist(s->chunks, &chunklist); 
+    if (size_chunklist == -1) return -1;
+
+    // Prepare REP_LIST
+    size_t size_filehash = SIZE_HEADER_TLV+SHA256_HASH_SIZE;
+    struct msg* asw = create_msg(size_filehash+size_chunklist, 
+                      (struct sockaddr*) &m->addr);
+    memcpy(asw->tlv->data, hash, size_filehash);
+    memcpy(&asw->tlv->data[size_filehash], chunklist, size_chunklist);
+
+    // Send answer
+    int ret = send_msg(ctask->sockfd, asw);
+
+    free(chunklist);
+    drop_msg(asw);
+
+    return ret;
+}
 
 
 
 
+ssize_t chunks2chunklist (struct chunk* c, void** dest){
+    
+    size_t mem_size = 512;
+    size_t used_size = 0;
+    void* mem = malloc(mem_size);
+    if (mem == NULL) return -1;
 
+    struct tlv* hash= NULL;
+    hash->type = CHUNK_HASH;
+    tlvset_length(hash, SHA256_HASH_SIZE+2);
+    size_t size_chunk = SIZE_HEADER_TLV+SHA256_HASH_SIZE+2;
 
+    while (c != NULL){
+
+        // Only chunks that are actually availables
+        if (c->status != AVAILABLE){
+            c = c->next;
+            continue;
+        }
+
+        // Copy chunk's data
+        memcpy(hash->data, c->hash, SHA256_HASH_SIZE+2); 
+
+        // Resize buf if necessary 
+        if (used_size + size_chunk > mem_size){
+            mem_size += size_chunk + 512;
+            void* tmp = realloc(mem, mem_size);
+            if (tmp == NULL) { free(mem); return -1;}
+            mem = tmp;
+        }
+
+        // Copy chunk
+        memcpy((char*) mem+used_size, hash, size_chunk);
+        used_size += size_chunk;
+
+        c = c->next;
+    }
+
+    *dest = mem;
+    return used_size;
+}
 
 
 
@@ -604,7 +690,6 @@ int st_addlocal(st_ctask ctask, const char* addr, uint16_t port){
     ctask->locals = localaddr;
     return 0; 
 }
-
 
 
 int main(int argc, char* argv[]){

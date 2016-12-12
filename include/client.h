@@ -45,8 +45,9 @@ typedef enum {
 
 struct chunk {
     char hash[SHA256_HASH_SIZE]; // Hash of the chunk
+    uint16_t index;              // Position into the file (keep it
+                                 //  after the hash)
     chunk_status status;         // ready/busy/empty
-    int index;                   // Position into the file
     struct chunk* next;
 };
 
@@ -82,5 +83,9 @@ int st_put(st_ctask ctask, const char* filename);
 int _put_t(st_ctask ctask, const struct sockaddr* tracker, 
            const char* hash, struct sockaddr* local);
 int send_req(st_ctask ctask, struct request* req);
+
+ssize_t chunks2chunklist (struct chunk* c, void** dest);
+int rep_list(struct ctask* ctask, struct msg* m);
+struct c_seed* search_hash_c(struct c_seed* list, const char* hash);
 
 #endif
