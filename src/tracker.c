@@ -272,7 +272,7 @@ int handle_msg(st_ttask ttask, struct msg* m){
     switch (m->tlv->type){
         case PUT_T: h_put_t(ttask, m);
             break;
-        case GET:   h_get_t(ttask, m);
+        case GET_T:   h_get_t(ttask, m);
             break;
         case KEEP_ALIVE: puts("KEEP_ALIVE");
             break;

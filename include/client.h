@@ -47,7 +47,6 @@ struct chunk {
     char hash[SHA256_HASH_SIZE]; // Hash of the chunk
     chunk_status status;         // ready/busy/empty
     int index;                   // Position into the file
-    struct host* seeders;        // Pointers to the seeders 
     struct chunk* next;
 };
 
@@ -55,8 +54,15 @@ struct c_seed {
     char hash[SHA256_HASH_SIZE]; // Hash of the file
     char* filename;              // Path to the file
     struct chunk* chunks;        // List of the chunks
-    struct host* seeders;        // List of seeders sharing the file
     struct c_seed* next;         // Next hash of the list
+};
+
+
+struct in_trasmission {
+    int sockfd;
+    char hash[SHA256_HASH_SIZE]; // Hash of the file
+    struct chunk* chunks;        // List of the chunks
+    struct host* seeders;
 };
 
 

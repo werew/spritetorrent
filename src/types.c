@@ -132,6 +132,16 @@ void tlvset_length(struct tlv* tlv, uint16_t length){
 
 
 
+struct msg* msg_dup(const struct msg* m){
+
+    struct msg* dup = create_msg(m->size-SIZE_HEADER_TLV, 
+            (struct sockaddr*) &m->addr);
+    if (dup == NULL) return NULL;
+
+    memcpy(dup->tlv,m->tlv, m->size);
+
+    return dup;
+}
 
 
 
