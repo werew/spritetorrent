@@ -293,7 +293,7 @@ int handle_msg(st_ttask ttask, struct msg* m){
 int h_get_t(st_ttask ttask, struct msg* m){
 
     // Some tests on the format of the message
-    if (validate_tlv(m->tlv,2) != 0){
+    if (validate_tlv(m->tlv,1) != 0){
         puts("Message dropped: invalid format");
         return 0;
     }
@@ -305,11 +305,8 @@ int h_get_t(st_ttask ttask, struct msg* m){
         return -1;
     }
 
-    // Read client value 
-    struct tlv* client = (void*) m->tlv->data + 
-                         SIZE_HEADER_TLV + hlength;
-    struct sockaddr* cl = client2sockaddr(client);  
-    if (cl == NULL) return -1;
+    /* Get client */
+    struct sockaddr* cl = (struct sockaddr*) &m->addr;
     puts("Got client"); printsockaddr(cl);
 
     // Get the htable index and then search the seeders
@@ -317,9 +314,13 @@ int h_get_t(st_ttask ttask, struct msg* m){
     struct seed* s = search_hash(ttask->htable[hti],hash->data);
 
     // Craft answer
-    struct msg* asw = create_msg(0, cl);
+    struct msg* asw = create_msg(SIZE_HEADER_TLV+
+                                 SHA256_HASH_SIZE, cl);
     if (asw == NULL) goto err_1;
     asw->tlv->type = ACK_GET;
+
+    // Add hash
+    memcpy(asw->tlv->data,hash, SIZE_HEADER_TLV+SHA256_HASH_SIZE);
 
     // If there are seeders for the hash
     if (s != NULL && s->seeders != NULL) {
@@ -331,20 +332,22 @@ int h_get_t(st_ttask ttask, struct msg* m){
         if (size_clients == -1) goto err_2;
 
         // Copy list into the message        
-        void* tmp = realloc(asw->tlv, SIZE_HEADER_TLV+size_clients); 
+        void* tmp = realloc(asw->tlv, asw->size + size_clients); 
         if (tmp == NULL) {free(client_list); goto err_2;};
         asw->tlv = tmp;
+        asw->size += size_clients; 
+        tlvset_length(asw->tlv, tlvget_length(asw->tlv)+size_clients);
 
-        memcpy(&asw->tlv[SIZE_HEADER_TLV], client_list, size_clients);
-        asw->size = SIZE_HEADER_TLV + size_clients; 
+        memcpy(&asw->tlv->data[SIZE_HEADER_TLV+SHA256_HASH_SIZE], 
+               client_list, size_clients);
 
         free(client_list);
     }
+
     
     if (send_msg(ttask->sockfd, asw) == -1) goto err_2;
 
     drop_msg(asw);
-    free(cl);
     
     return 0;
 
@@ -379,7 +382,10 @@ ssize_t seeders2clientlist
     while (s != NULL){
 
         // Do not collect expired seeders
-        if (now - s->lastseen > max_age) continue;
+        if (now - s->lastseen > max_age){
+            s = s->next;
+            continue;
+        }
 
         // Get client
         client = sockaddr2client(s->addr);
@@ -394,7 +400,7 @@ ssize_t seeders2clientlist
         }
        
         // Resize buf if necessary 
-        if (used_size + size_cli < mem_size){
+        if (used_size + size_cli > mem_size){
             mem_size += size_cli + 512;
             void* tmp = realloc(mem, mem_size);
             if (tmp == NULL) goto err_2;

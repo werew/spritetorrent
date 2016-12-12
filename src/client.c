@@ -418,6 +418,9 @@ err_1:
 
 
 
+/********************* IN TRANSMISSION ***********************/
+
+
 
 
 int handle_ack_get(struct in_trasmission* it, struct msg* m){
@@ -441,6 +444,8 @@ int handle_ack_get(struct in_trasmission* it, struct msg* m){
 
         struct sockaddr* addr_seeder = client2sockaddr(client);
         if (addr_seeder == NULL) return -1;
+
+        printsockaddr(addr_seeder);
         
         struct host* s = malloc(sizeof(struct host));
         if (s == NULL) {
@@ -475,7 +480,7 @@ int get_t(struct sockaddr* tracker, struct in_trasmission* it){
     tlv_hash->type = FILE_HASH;
     tlvset_length(tlv_hash,SHA256_HASH_SIZE);
     memcpy(tlv_hash->data, it->hash, SHA256_HASH_SIZE);
-    
+   
     // Init pollfd
     struct pollfd pfd;
     pfd.fd = it->sockfd;
@@ -497,7 +502,7 @@ int get_t(struct sockaddr* tracker, struct in_trasmission* it){
         printf("---> Accept ACK GET\n");
         if ((answer = accept_msg(it->sockfd)) == NULL) return -1;
 
-        ret = handle_ack_get(it, m);
+        ret = handle_ack_get(it, answer);
         drop_msg(m);
         drop_msg(answer);
 
@@ -523,11 +528,9 @@ int st_get(st_ctask ctask, const char hash[SHA256_HASH_SIZE]){
 
     memcpy(it.hash,hash,SHA256_HASH_SIZE);
 
-    //
+    // Get clients
     struct host* tracker = ctask->trackers;
-    get_t(tracker->addr, &it);
-
-    // TODO complete
+    if (get_t(tracker->addr, &it) == -1) return -1;
 
     // Start transmission
 
@@ -536,7 +539,7 @@ int st_get(st_ctask ctask, const char hash[SHA256_HASH_SIZE]){
 
 
 
-
+/********************** CONFIG *******************************/
 
 int st_addtracker(st_ctask ctask, const char* addr, uint16_t port){
     
@@ -585,8 +588,12 @@ int main(int argc, char* argv[]){
     st_addlocal(ctask,"127.0.0.1",2222);
 
     st_put(ctask, "/etc/passwd");
-    st_get(ctask,
-"a62833497978f85a9616f818a5bc210cf7ffd732c84a8664945d4402e142e827");
+
+    char hash[SHA256_HASH_SIZE];
+    string_to_sha256((unsigned char*) hash,
+"0d3e2e56a2d3cd9ed109d842d9e4aed3df34465c3bc38f59da6cdb18a7121d32");
+
+    st_get(ctask, hash);
 
     st_cstart(ctask);
 
