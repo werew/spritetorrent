@@ -123,11 +123,70 @@ int poll_runupdate(st_ctask ctask){
     puts("Update POLL");
     ctask->lastupdate = time(NULL); 
     if (ctask->lastupdate == -1) return -1;
+
+    // Scan the poll
+    struct request* prev = NULL;
+    struct request* current = ctask->req_poll;
+     
+    while (current != NULL){
+        if (current->attempts > MAX_ATTEMPTS){
+            // Drop old request
+
+            if (prev == NULL) ctask->req_poll = current->next;
+            else  prev->next = current->next;
+            
+            struct request* next = current->next;
+
+            drop_msg(current->msg);
+            free(current);
+
+            current = next;
+
+        } else {
+            // Update request 
+            send_req(ctask, current);
+            prev = current;
+            current = current->next;
+        }
+
+    }
+
     return 0;
 }
 
 int ka_gen(st_ctask ctask){
     puts("KA generation");
+    int i;
+    for (i=0; i<SIZE_HTABLE; i++){
+        struct c_seed* seed = ctask->htable[i];
+        while (seed != NULL){
+            
+            struct host* tracker = ctask->trackers;
+            while (tracker != NULL){
+                struct request* req = calloc(1,
+                        sizeof(struct request));
+                if (req == NULL) return -1;
+    
+                req->msg = create_msg(SIZE_HEADER_TLV+
+                            SHA256_HASH_SIZE, tracker->addr);
+                if (req->msg == NULL) {free(req); return -1;}
+
+                req->msg->tlv->type = KEEP_ALIVE;
+
+                struct tlv* filehash=(struct tlv*)req->msg->tlv->data;
+                filehash->type = FILE_HASH;
+                tlvset_length(filehash,SHA256_HASH_SIZE);
+                memcpy(filehash->data, seed->hash, SHA256_HASH_SIZE);
+
+                send_req(ctask, req);
+                push_req(ctask, req);
+
+                tracker = tracker->next;
+            }
+            seed = seed->next; 
+        }
+    }
+    
     return 0;
 }
 

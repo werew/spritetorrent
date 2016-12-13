@@ -3,7 +3,8 @@
 
 #include "sha256.h"
 
-
+#define MAX_ATTEMPTS 3
+#define MIN_DELAY    2
 struct request {
     struct msg* msg;            // The body of the request
     time_t timestamp;           // When was it last done
@@ -99,4 +100,6 @@ int receive_chunk(struct in_trasmission* it,
     struct chunk* c, struct msg* req, char* filename);
 int st_get(st_ctask ctask, 
 const char hash[SHA256_HASH_SIZE], char* filename);
+void push_req(st_ctask ctask, struct request* req);
+
 #endif
