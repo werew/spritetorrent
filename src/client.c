@@ -147,6 +147,7 @@ int handle_msg(st_ctask ctask, struct msg* m){
 
     switch (m->tlv->type){
         case GET_C: puts("received GET_C: new transmission");
+                    rep_get(ctask,m);
             break;
 
         case LIST: puts("rceived LIST");
@@ -160,6 +161,62 @@ int handle_msg(st_ctask ctask, struct msg* m){
             break;
         default: puts("Bad msg type");
     }
+    return 0;
+}
+
+
+int rep_get(struct ctask* ctask, struct msg* m){
+
+    // Get file hash
+    struct tlv* hash = (struct tlv*) m->tlv->data;
+    if (hash->type != FILE_HASH) return -1;
+
+    // Search into the htable 
+    int idx = htable_index(hash->data, SHA256_HASH_SIZE);
+    struct c_seed* s = search_hash_c(ctask->htable[idx],hash->data);
+    if (s == NULL) return 0; // File not found
+
+    hash = (struct tlv*) &hash->data[SHA256_HASH_SIZE];
+
+    // Find chunk
+    struct chunk* c = s->chunks;
+    while (c != NULL){
+        if (memcmp(hash->data, c->hash,SHA256_HASH_SIZE) == 0) break;
+        c = c->next;
+    }
+    if (c == NULL) return 0;    // Chunk not found
+
+
+    // Log
+    char shash[SHA256_HASH_SIZE*2];
+    sha256_to_string(shash,c->hash);
+    printf(BLUE"Transmitting %s of \"%s\"\n"CRESET,shash,s->filename);
+    
+   /* 
+    // Chunks (they are stored inside the seed_c)
+    void* chunklist;
+    ssize_t size_chunklist = chunks2chunklist(s->chunks, &chunklist); 
+    if (size_chunklist == -1) return -1;
+
+    // Prepare REP_LIST
+    size_t size_filehash = SIZE_HEADER_TLV+SHA256_HASH_SIZE;
+    struct msg* asw = create_msg(size_filehash+size_chunklist, 
+                      (struct sockaddr*) &m->addr);
+    asw->tlv->type = REP_LIST;
+    tlvset_length(asw->tlv,SIZE_HEADER_TLV+
+                 SHA256_HASH_SIZE+size_chunklist);
+    memcpy(asw->tlv->data, hash, size_filehash);
+    memcpy(&asw->tlv->data[size_filehash], chunklist, size_chunklist);
+
+    // Send answer
+    int ret = send_msg(ctask->sockfd, asw);
+
+    free(chunklist);
+    drop_msg(asw);
+
+    return ret;
+*/
+
     return 0;
 }
 
