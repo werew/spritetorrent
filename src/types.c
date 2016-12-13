@@ -159,7 +159,6 @@ struct msg* msg_dup(const struct msg* m){
  * @return 0 in case of success, -1 otherwise
  */
 int validate_tlv(struct tlv* msg, unsigned int nargs){
-    puts("Validate tlv");//
     unsigned int expected_size, nheaders, summ_lengths;
     expected_size = nheaders = summ_lengths = 0;
 

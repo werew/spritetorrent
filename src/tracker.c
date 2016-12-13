@@ -73,7 +73,6 @@ int st_twork(st_ttask ttask){
         else if (ret == 0 ) break; // timeout
 
         // A message has arrived
-        printf("Accept\n");
         if ((m = accept_msg(ttask->sockfd)) == NULL) return -1;
                 
         if (handle_msg(ttask, m) == -1) return -1;
@@ -98,7 +97,6 @@ int st_tstart(st_ttask ttask){
         if (ttask->last_probe == -1) return -1;
         
         // listen/handle/reply
-        printf("Wait\n");
         if (st_twork(ttask) == -1) return -1;
     }
 
@@ -149,17 +147,12 @@ void drop_seeder(struct seeder* s){
  */
 struct seed* search_hash
 (struct seed* list, const char* hash){
-    puts("Start search hash");//
     while (list != NULL){
-        printf("Compare: "); //
-        printhash(list->hash);//
         if (memcmp(list->hash,hash,SHA256_HASH_SIZE) == 0){
-            puts("Found");//
             return list;
         }
         list = list->next;
     }
-    puts("Not found");//
     return NULL;
 }
 
@@ -195,8 +188,7 @@ int h_put_t(st_ttask ttask, struct msg* m){
     }
 
     // DEBUG
-    puts("---->received PUT_T");
-    printsockaddr((struct sockaddr*) &m->addr);
+    puts("----> received PUT_T");
     printhash(hash->data);
 
 
@@ -206,7 +198,6 @@ int h_put_t(st_ttask ttask, struct msg* m){
 
     // If no seed corresponds to the hash append a new one
     if (s == NULL){
-        puts("Create seed");//
         s = malloc(sizeof (struct seed));
         if (s == NULL) return -1;
 
@@ -236,7 +227,6 @@ int h_put_t(st_ttask ttask, struct msg* m){
 
     // Keep track of the number of seeders
     ttask->hosts_count++;
-    printf("%d\n",ttask->hosts_count);
 
 
     // ACK PUT

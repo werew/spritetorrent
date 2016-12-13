@@ -84,13 +84,8 @@ int send_msg(int sockfd, struct msg* m){
     ssize_t s = sendto(sockfd, m->tlv, sizemsg, 0, 
             (struct sockaddr*) &m->addr, m->addrlen);
 
-    puts("sending");
     if (s < sizemsg) return -1;
-
-    puts("sent");
-
     return 0;
-
 }
 
 

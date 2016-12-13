@@ -62,7 +62,6 @@ int st_cstart(st_ctask ctask){
     while(1){
         
         // listen/handle/reply
-        printf("Wait\n");
         if (st_cwork(ctask) == -1) return -1;
         
         // Forge KAs
@@ -107,10 +106,8 @@ int st_cwork(st_ctask ctask){
         else if (ret == 0 ) break; // timeout
 
         // A message has arrived
-        printf("Accept\n");
         if ((m = accept_msg(ctask->sockfd)) == NULL) return -1;
                 
-        printsockaddr((struct sockaddr*) &m->addr);
         if (handle_msg(ctask, m) == -1) return -1;
     }
 
@@ -120,7 +117,6 @@ int st_cwork(st_ctask ctask){
 
 
 int poll_runupdate(st_ctask ctask){
-    puts("Update POLL");
     ctask->lastupdate = time(NULL); 
     if (ctask->lastupdate == -1) return -1;
 
@@ -155,7 +151,6 @@ int poll_runupdate(st_ctask ctask){
 }
 
 int ka_gen(st_ctask ctask){
-    puts("KA generation");
     int i;
     for (i=0; i<SIZE_HTABLE; i++){
         struct c_seed* seed = ctask->htable[i];
@@ -203,21 +198,15 @@ int ka_gen(st_ctask ctask){
  * @return -1 in case of error, 0 otherwise
  */
 int handle_msg(st_ctask ctask, struct msg* m){
-    puts("Handle msg");
 
-    printsockaddr((struct sockaddr*) &m->addr);
     switch (m->tlv->type){
-        case GET_C: puts("received GET_C: new transmission");
-                    rep_get(ctask,m);
+        case GET_C: rep_get(ctask,m);
             break;
-
-        case LIST: puts("rceived LIST");
-                   rep_list(ctask, m);
+        case LIST: rep_list(ctask, m);
             break;
-
         case ACK_PUT: 
         case ACK_GET: 
-        case ACK_KEEP_ALIVE: puts("received ACK"); 
+        case ACK_KEEP_ALIVE: 
                 rm_answered(ctask, m);
             break;
         default: puts("Bad msg type");
@@ -256,7 +245,6 @@ int rep_get(struct ctask* ctask, struct msg* m){
 
 
 
-    printsockaddr((struct sockaddr*) &m->addr);
     transmit_chunk(ctask, m, s, c);
 
     
@@ -312,9 +300,6 @@ int transmit_chunk(struct ctask* ctask, struct msg* m,
         memcpy(frag->data, &index, 2);
 
         fread(&frag->data[4], 1, frag_size, file); //!= frag_size
-        puts("---------ABOUT TO SEND --------");
-        write(0,&frag->data[4],frag_size);
-        puts("\n--------------END--------------");
         sleep(1);
             send_msg(ctask->sockfd, asw);/* == -1){
             drop_msg(asw);
@@ -337,17 +322,12 @@ int transmit_chunk(struct ctask* ctask, struct msg* m,
 
 struct c_seed* search_hash_c
 (struct c_seed* list, const char* hash){
-    puts("Start search hash");//
     while (list != NULL){
-        printf("Compare: "); //
-        printhash(list->hash);//
         if (memcmp(list->hash,hash,SHA256_HASH_SIZE) == 0){
-            puts("Found");//
             return list;
         }
         list = list->next;
     }
-    puts("Not found");//
     return NULL;
 }
 
@@ -467,20 +447,12 @@ void rm_answered(st_ctask ctask, struct msg* m){
 
         if (req_type == current->msg->tlv->type){
 
-            // Debug    
-            printf("Compare addr\n");
-            printsockaddr((struct sockaddr*) &m->addr);
-            printsockaddr((struct sockaddr*) &current->msg->addr);
-
             if (sockaddr_cmp((struct sockaddr*) &m->addr,        
                (struct sockaddr*) &current->msg->addr) == 1){
 
-                printf("Matched addr\n");
                 if (tlv_cmp((struct tlv*) current->msg->tlv->data,
                         (struct tlv*) m->tlv->data) == 1){
                     
-                    printf("Matched data\n");
-
                     if (prev == NULL) ctask->req_poll = current->next;
                     else  prev->next = current->next;
 
@@ -675,7 +647,6 @@ int st_put(st_ctask ctask, const char* filename){
 
     // Push into htable
     unsigned int hti = htable_index(s->hash,SHA256_HASH_SIZE);
-    printf("INDEX %d\n",hti);
     s->next = ctask->htable[hti];
     ctask->htable[hti] = s;
 
@@ -735,8 +706,6 @@ int handle_ack_get(struct in_trasmission* it, struct msg* m){
         struct sockaddr* addr_seeder = client2sockaddr(client);
         if (addr_seeder == NULL) return -1;
 
-        printsockaddr(addr_seeder);
-        
         struct host* s = malloc(sizeof(struct host));
         if (s == NULL) {
             free(addr_seeder);
@@ -977,10 +946,6 @@ int receive_chunk(struct in_trasmission* it,
             goto error_2;
         }
 
-        printf("-----%ld----",size_frag);
-        write(0,&frag->data[4], size_frag);
-        puts("\n---------\n");
-       
         // Count fragment 
         if (received[index] == 0) {
             received[index] = 1;
