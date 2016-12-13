@@ -42,6 +42,7 @@ typedef enum {
 
 
 #define CHUNK_SIZE 700 //(1024*1024) // 1 Mb
+#define FRAG_SIZE 100
 
 struct chunk {
     char hash[SHA256_HASH_SIZE]; // Hash of the chunk
@@ -91,4 +92,6 @@ struct c_seed* search_hash_c(struct c_seed* list, const char* hash);
 int get_c(struct in_trasmission* it, struct chunk* c,struct host* h);
 int handle_rep_list(struct in_trasmission* it, struct msg* m);
 
+int transmit_chunk(struct ctask* ctask, struct msg* m,
+    struct c_seed* seed, struct chunk* c);
 #endif

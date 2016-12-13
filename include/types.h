@@ -9,6 +9,7 @@
 #define FILE_HASH        50
 #define CHUNK_HASH       51
 #define CLIENT           55
+#define CHUNK_FRAG       60
 /* client <--> client */
 #define GET_C           100
 #define REP_GET         101

@@ -181,7 +181,8 @@ int rep_get(struct ctask* ctask, struct msg* m){
     // Find chunk
     struct chunk* c = s->chunks;
     while (c != NULL){
-        if (memcmp(hash->data, c->hash,SHA256_HASH_SIZE) == 0) break;
+        if (memcmp(hash->data, c->hash,SHA256_HASH_SIZE) == 0 &&
+            c->status == AVAILABLE ) break;
         c = c->next;
     }
     if (c == NULL) return 0;    // Chunk not found
@@ -191,34 +192,81 @@ int rep_get(struct ctask* ctask, struct msg* m){
     char shash[SHA256_HASH_SIZE*2];
     sha256_to_string(shash,c->hash);
     printf(BLUE"Transmitting %s of \"%s\"\n"CRESET,shash,s->filename);
+
+
+
+    transmit_chunk(ctask, m, s, c);
+
     
-   /* 
-    // Chunks (they are stored inside the seed_c)
-    void* chunklist;
-    ssize_t size_chunklist = chunks2chunklist(s->chunks, &chunklist); 
-    if (size_chunklist == -1) return -1;
-
-    // Prepare REP_LIST
-    size_t size_filehash = SIZE_HEADER_TLV+SHA256_HASH_SIZE;
-    struct msg* asw = create_msg(size_filehash+size_chunklist, 
-                      (struct sockaddr*) &m->addr);
-    asw->tlv->type = REP_LIST;
-    tlvset_length(asw->tlv,SIZE_HEADER_TLV+
-                 SHA256_HASH_SIZE+size_chunklist);
-    memcpy(asw->tlv->data, hash, size_filehash);
-    memcpy(&asw->tlv->data[size_filehash], chunklist, size_chunklist);
-
-    // Send answer
-    int ret = send_msg(ctask->sockfd, asw);
-
-    free(chunklist);
-    drop_msg(asw);
-
-    return ret;
-*/
-
     return 0;
 }
+
+
+
+int transmit_chunk(struct ctask* ctask, struct msg* m,
+    struct c_seed* seed, struct chunk* c){
+
+    FILE* file = fopen(seed->filename, "r");
+    if (file == NULL) return -1;
+
+    // Calculate size chunk
+    fseek(file, 0, SEEK_END);
+    size_t file_size  = ftell(file);
+    size_t offset  = c->index*CHUNK_SIZE;
+    size_t size_chunk = (file_size - offset < CHUNK_SIZE)?
+           file_size - offset : CHUNK_SIZE;
+
+    // The result is: max_frags = ceil(size_chunk/FRAG_SIZE)-1;
+    uint16_t max_frags = (size_chunk+FRAG_SIZE-1)/FRAG_SIZE-1;
+    uint16_t index  = 0;
+    
+    // Move to the chunk
+    fseek(file, offset, SEEK_SET);    
+
+    // Prepare message
+    struct msg* asw = create_msg(tlvget_length(m->tlv) + 
+                        SIZE_HEADER_TLV+4+FRAG_SIZE, 
+                        (struct sockaddr*) &m->addr);
+    if (m == NULL) { fclose(file); return -1; }
+
+    // Base data
+    asw->tlv->type = REP_GET;
+    memcpy(asw->tlv->data, m->tlv->data, tlvget_length(m->tlv));
+    size_t fixedlength = tlvget_length(m->tlv)+SIZE_HEADER_TLV+4;
+    struct tlv* frag = (struct tlv*)&asw->tlv->data
+                        [tlvget_length(m->tlv)];
+    frag->type = CHUNK_FRAG;
+    memcpy(&frag->data[2], &max_frags, 2);
+    
+
+    // Start transmission
+    while (index <= max_frags){
+        size_t frag_size = (size_chunk < FRAG_SIZE)?
+                            size_chunk : FRAG_SIZE;
+        size_chunk -= frag_size;
+
+        tlvset_length(frag, frag_size);
+        asw->size = fixedlength + frag_size;
+        memcpy(frag->data, &index, 2);
+
+        if (fread(&frag->data[4], 1, frag_size, file) != frag_size ||
+            send_msg(ctask->sockfd, asw) ){
+            drop_msg(asw);
+            fclose(file);
+            return -1;
+        }
+        
+        printf(CYAN"---> Fragment %d of %d. Size %ld\n"CRESET,
+                   index, max_frags, frag_size);
+        index++;
+    }
+
+    drop_msg(asw);
+    fclose(file);
+    return 0;
+}
+
+
 
 struct c_seed* search_hash_c
 (struct c_seed* list, const char* hash){
