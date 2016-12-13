@@ -204,6 +204,9 @@ int rep_list(struct ctask* ctask, struct msg* m){
     size_t size_filehash = SIZE_HEADER_TLV+SHA256_HASH_SIZE;
     struct msg* asw = create_msg(size_filehash+size_chunklist, 
                       (struct sockaddr*) &m->addr);
+    asw->tlv->type = REP_LIST;
+    tlvset_length(asw->tlv,SIZE_HEADER_TLV+
+                 SHA256_HASH_SIZE+size_chunklist);
     memcpy(asw->tlv->data, hash, size_filehash);
     memcpy(&asw->tlv->data[size_filehash], chunklist, size_chunklist);
 
@@ -666,7 +669,58 @@ int list(struct in_trasmission* it){
     struct msg* answer = accept_msg(it->sockfd);
     if (answer ==  NULL) return -1;
 
+    handle_rep_list(it, answer);
+
     return 0;
+}
+
+
+
+
+
+int handle_rep_list(struct in_trasmission* it, struct msg* m){
+    if (m->tlv->type != REP_LIST) return -1;
+
+    size_t length = tlvget_length(m->tlv);
+
+    struct tlv* hash = (struct tlv*) m->tlv->data;
+
+    // Is it the correct file hash ?
+    if (hash->type != FILE_HASH ||
+        memcmp(hash->data, it->hash, 
+        SHA256_HASH_SIZE) != 0){
+        return -1;
+    }
+
+    hash = (struct tlv*) &hash->data[SHA256_HASH_SIZE];
+    length -= SIZE_HEADER_TLV + SHA256_HASH_SIZE;
+    while (length > 0){
+
+               
+        if (hash->type != CHUNK_HASH) return -1;
+        
+        struct chunk* c = calloc(1,sizeof(struct chunk));
+        if (c == NULL) return -1;
+
+        
+        memcpy(c->hash,hash->data,SHA256_HASH_SIZE+2);
+
+        // Log
+        char shash[SHA256_HASH_SIZE*2];
+        sha256_to_string(shash,c->hash);
+        printf(YELLOW"\tGot chunk%d: %s\n"CRESET, c->index, shash);
+
+        c->next = it->chunks;
+        it->chunks = c;
+        
+        length -= SIZE_HEADER_TLV+SHA256_HASH_SIZE+2;
+        hash = (struct tlv*) &hash->data[SHA256_HASH_SIZE+2];
+    }
+
+    
+
+   return 0; 
+
 }
 
 
@@ -690,9 +744,32 @@ int st_get(st_ctask ctask, const char hash[SHA256_HASH_SIZE]){
 
     // Get chunks
     list(&it);
+
+    // Get chunks
+    struct chunk* c = it.chunks;
+    while (c != NULL){
+        get_c(&it, c);
+        c = c->next;
+    }
+
+    return 0;
+}
+
+
+int get_c(struct in_trasmission* it, struct chunk* c){
+
+    
+    // LOG
+    char shash[SHA256_HASH_SIZE*2];
+    sha256_to_string(shash,c->hash);
+    printf(CYAN"\tGET_C %s\n"CRESET, shash);
+
     
 
     return 0;
+
+    
+
 }
 
 

@@ -87,5 +87,7 @@ int send_req(st_ctask ctask, struct request* req);
 ssize_t chunks2chunklist (struct chunk* c, void** dest);
 int rep_list(struct ctask* ctask, struct msg* m);
 struct c_seed* search_hash_c(struct c_seed* list, const char* hash);
+int get_c(struct in_trasmission* it, struct chunk* c);
+int handle_rep_list(struct in_trasmission* it, struct msg* m);
 
 #endif
