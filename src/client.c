@@ -248,7 +248,7 @@ int transmit_chunk(struct ctask* ctask, struct msg* m,
                             size_chunk : FRAG_SIZE;
         size_chunk -= frag_size;
 
-        tlvset_length(frag, frag_size);
+        tlvset_length(frag, frag_size+4);
         asw->size = fixedlength + frag_size;
         memcpy(frag->data, &index, 2);
 
@@ -914,7 +914,7 @@ int receive_chunk(struct in_trasmission* it,
             goto error_2;
         }
 
-        puts("---------");
+        printf("-----%ld----",size_frag);
         write(0,&frag->data[4], size_frag);
         puts("\n---------\n");
        
