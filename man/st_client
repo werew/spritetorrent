@@ -1,0 +1,72 @@
+.Dd 13/12/2016      \" DATE
+.Dt st_client       \" Program name and manual section number
+.Os st_client
+.Sh NAME                 
+.Nm st_client
+.Nd Share and download files.
+.Sh SYNOPSIS          
+.Nm
+.Op Fl h                   \" [-h]
+.Op Fl l Ar localaddr      \" [-l localaddr]
+.Op Fl t Ar tracker port   \" [-t tracker port]
+.Op Fl g Ar hashfile dest  \" [-g filehash dest]
+.Op Fl p Ar file           \" [-p file]
+.Ar port                   
+.Sh DESCRIPTION
+
+.Nm
+is an high level, cli-based client designed for exchanging files
+according to the peer to peer paradigm. When running st_client needs
+one ore more instances of an
+.Ar st_tracker 
+running on the same or a separate machine in order to work correclty.
+.Pp                      \" Inserts a space
+.Sh OPTIONS
+.Bl -tag -width -indent  \" Begins a tagged list
+.It Ar port
+The port used by this client
+.El                      \" Ends the list
+.Pp
+The options are as follow:
+.Bl -tag -width -indent  \" Differs from above in tag removed
+.It Fl h
+Shows the help
+.It Fl l Ar localaddr 
+Add localaddr to the addresses to declare when sharing a file.
+.It Fl t Ar tracker port
+Add the given tracker (address + port)  to the list of trackers
+availables. 
+.It Fl g Ar filehash dest
+Get a file: download the file identified by the given filehash
+and write it into dest. When getting a file an st_client will first
+need to lookup the other client sharing the given file for this it
+will need to query one or more trackers thus at least one tracker
+must be defined when using this option.
+.It Fl p Ar file
+Put a file: share the given file. When putting a file an st_client
+will compute the hash of the file and push it to all the known
+trackers and for all the local address declared. Thus when using
+the option -p, both options -t and -l must be set at least once 
+otherwise the option -p will not have any effect.
+.El                      \" Ends the list
+.Pp
+.Sh EXAMPLES 
+Download the file identified by the given hash and write it to
+the file "output". Do this by quering the only tracker known:
+127.0.0.1 5555 and using the post 2222:
+.Pp
+st_client \-t 127.0.0.1 5555 \-g 1d0a45d76618201268141f3b4e3d8f08907da99c42906c55466c04a39dabd908 output 2222
+.Pp
+Share the file "myfile" by pushing the hash into the tracker
+198.164.1.32 5555 and declaring the local address 132.1.0.34 which
+will be used to the other client to contact us:
+.Pp
+st_client \-t 198.164.1.32 5555 -l 132.1.0.34 \-p myfile 2222
+.Pp
+
+.Sh SEE ALSO
+.Xr st_tracker 1
+
+.Sh AUTHORS
+Victor Constans (vconstans@etu.unistra.fr)
+Luigi Coniglio (luigi.coniglio@etu.unistra.fr)

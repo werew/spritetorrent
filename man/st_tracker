@@ -1,0 +1,29 @@
+.Dd 13/12/2016      \" DATE
+.Dt st_tracker       \" Program name and manual section number
+.Os st_tracker
+.Sh NAME                 
+.Nm st_tracker
+.Nd Let different instances of st_client comunicate by sharing 
+and downloading filehashes
+.Sh SYNOPSIS          
+.Nm
+.Ar port                   
+.Sh DESCRIPTION
+
+.Nm
+covers the role of an hash server, storing filehashes from several
+clients and retrieving it when asked. The main purpose of st_tracker
+is to let different clients comunicate between each other.
+.Pp                      \" Inserts a space
+.Bl -tag -width -indent  \" Begins a tagged list
+.It Ar port
+The port from where the tracker will listen
+.El                      \" Ends the list
+.Pp
+
+.Sh SEE ALSO
+.Xr st_client 1
+
+.Sh AUTHORS
+Victor Constans (vconstans@etu.unistra.fr)
+Luigi Coniglio (luigi.coniglio@etu.unistra.fr)
