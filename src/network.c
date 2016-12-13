@@ -18,10 +18,10 @@ struct sockaddr* human2sockaddr(const char* addr, uint16_t port){
 	struct sockaddr* sockaddr;
     unsigned long s_addr;
     
-		sockaddr = calloc(1,sizeof(struct sockaddr_in));
-		if (sockaddr == NULL) return NULL;
-		IN(sockaddr)->sin_family = AF_INET;
-		if (inet_pton(AF_INET ,addr, &s_addr) != -1 || errno != EAFNOSUPPORT){
+    sockaddr = calloc(1,sizeof(struct sockaddr_in));
+    if (sockaddr == NULL) return NULL;
+    IN(sockaddr)->sin_family = AF_INET;
+    if (inet_pton(AF_INET ,addr, &s_addr) != -1 || errno != EAFNOSUPPORT){
 			IN(sockaddr)->sin_port = htons(port);
 			IN(sockaddr)->sin_addr.s_addr = s_addr;
     } else {

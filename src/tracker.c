@@ -274,7 +274,7 @@ int handle_msg(st_ttask ttask, struct msg* m){
             break;
         case GET_T:   h_get_t(ttask, m);
             break;
-        case KEEP_ALIVE: puts("KEEP_ALIVE");
+        case KEEP_ALIVE: h_keep_alive(ttask, m);
             break;
         default: puts("INVALID");
     }
@@ -282,6 +282,30 @@ int handle_msg(st_ttask ttask, struct msg* m){
     return 0;
 }
 
+int h_keep_alive(st_ttask ttask, struct msg* m){
+      
+    struct tlv* hash = (struct tlv*) m->tlv->data; 
+    unsigned int hti = htable_index(hash->data,SHA256_HASH_SIZE);
+    struct seed* s = search_hash(ttask->htable[hti],hash->data);
+  
+    struct seeder* client = s->seeders; 
+    while (client != NULL){
+        if (sockaddr_cmp((struct sockaddr*) &m->addr, 
+              (struct sockaddr*) &client->addr) == 0){
+            client->lastseen = time(NULL);
+            break;
+        }
+        client = client->next;
+    }
+
+    if (client != NULL){
+        m->tlv->type = ACK_KEEP_ALIVE;
+        send_msg(ttask->sockfd, m);
+    }  
+
+    drop_msg(m);
+    return 0;
+}
 
 /**
  * Handle a message of type GET answering back to the
