@@ -748,7 +748,7 @@ int st_get(st_ctask ctask, const char hash[SHA256_HASH_SIZE]){
     // Get chunks
     struct chunk* c = it.chunks;
     while (c != NULL){
-        get_c(&it, c);
+        get_c(&it, c, it.seeders);
         c = c->next;
     }
 
@@ -756,7 +756,7 @@ int st_get(st_ctask ctask, const char hash[SHA256_HASH_SIZE]){
 }
 
 
-int get_c(struct in_trasmission* it, struct chunk* c){
+int get_c(struct in_trasmission* it, struct chunk* c,struct host* h){
 
     
     // LOG
@@ -764,12 +764,33 @@ int get_c(struct in_trasmission* it, struct chunk* c){
     sha256_to_string(shash,c->hash);
     printf(CYAN"\tGET_C %s\n"CRESET, shash);
 
-    
 
+    // Craft GET_C
+    struct msg* m = create_msg(SIZE_HEADER_TLV*2+
+                    SHA256_HASH_SIZE*2+2,h->addr);
+    if (m == NULL) return -1;
+
+    m->tlv->type = GET_C;
+    struct tlv* hash = (struct tlv*) m->tlv->data;
+    hash->type = FILE_HASH;
+    tlvset_length(hash, SHA256_HASH_SIZE);
+    memcpy(hash->data, it->hash, SHA256_HASH_SIZE);
+
+    hash = (struct tlv*) &hash->data[SHA256_HASH_SIZE];
+    hash->type = CHUNK_HASH;
+    tlvset_length(hash, SHA256_HASH_SIZE+2);
+    memcpy(hash->data, c->hash, SHA256_HASH_SIZE+2);
+
+
+    // Send GET_C msg
+    if (send_msg(it->sockfd, m) == -1){
+        drop_msg(m);
+        return -1;
+    }
+    
+        
+    drop_msg(m);
     return 0;
-
-    
-
 }
 
 
