@@ -155,7 +155,7 @@ struct msg* msg_dup(const struct msg* m){
  * @param nargs The number of struct tlv (args) contained 
  *        inside the message (without considering the 
  *        message itself
- * @param types The expected types of the args //TODO 
+ * @param types The expected types of the args 
  * @return 0 in case of success, -1 otherwise
  */
 int validate_tlv(struct tlv* msg, unsigned int nargs){
@@ -169,8 +169,6 @@ int validate_tlv(struct tlv* msg, unsigned int nargs){
         nheaders++; 
         expected_size = nheaders*SIZE_HEADER_TLV + summ_lengths;    
         if (total_length < expected_size) return -1; 
-
-        // TODO check also the types
 
         summ_lengths += tlvget_length
             ((struct tlv*)&msg->data[expected_size-SIZE_HEADER_TLV]);

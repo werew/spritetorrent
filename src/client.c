@@ -615,10 +615,10 @@ struct chunk* make_chunkslist(const char* filename){
     
     while (1) {
 
-        if (chunk == NULL) return NULL; // TODO free other chunks
+        if (chunk == NULL) return NULL;
         
         if (fsha256(chunk->hash, f, 
-            CHUNK_SIZE*index, CHUNK_SIZE) == -1) return NULL; // XXX
+            CHUNK_SIZE*index, CHUNK_SIZE) == -1) return NULL; 
 
         // Log
         char hash[SHA256_HASH_SIZE*2];
@@ -912,7 +912,7 @@ const char hash[SHA256_HASH_SIZE], char* filename){
     printf(YELLOW"GET: %s\n"CRESET, shash);
 
     // Get clients
-    struct host* tracker = ctask->trackers; // XXX use all
+    struct host* tracker = ctask->trackers;
     if (get_t(tracker->addr, &it) == -1) return -1;
 
     // Get chunks

@@ -7,7 +7,6 @@
 #define SHA256_HASH_SIZE 32
 
 /* SHA-256 Operations (on 32 bits words) */
-// TODO move to sha256.c (no need to have them here)
 #define CH(x,y,z)  ( ((x) & (y)) ^ ((~(x)) & (z) ) )
 #define MAJ(x,y,z) ( ((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)) )
 #define ROTL(x,n)  ( ((x) << (n)) | ((x) >> (32-(n))) )

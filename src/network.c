@@ -99,53 +99,6 @@ int send_msg(int sockfd, struct msg* m){
 
 
 
-
-/**
- * Creates a socket and binds it to the given address
- * and port.
- * @param addr A string containing an IPv4 or IPv6
- *        address
- * @param port The port to use. If 0 a random port
- *        will be used
- * @return The fd of the socket bound to the given
- *        port and address or -1 in case of error
- */
-int init_connection(char* addr, uint16_t port){	
-
-	int sockfd;
-	struct sockaddr_in sockaddr;
-
-    // TODO
-	int ip_v = AF_INET;
-
-	//Création socket
-	if ((sockfd = socket(ip_v,SOCK_DGRAM,0)) == -1){
-		perror("Erreur socket tracker");
-		//TODO traitement de l'erreur
-	}
-
-	sockaddr.sin_family = ip_v;
-	sockaddr.sin_port   = htons(port);
-
-	if(addr==NULL){
-		sockaddr.sin_addr.s_addr=INADDR_ANY;
-	}else{
-		inet_pton(ip_v,addr,&sockaddr.sin_addr.s_addr);
-	}
-	
-
-	//Configuration du socket
-	if (bind(sockfd,(struct sockaddr *)&sockaddr,
-             sizeof(struct sockaddr_in)) == -1){
-        perror("bind");
-		//TODO traitement de l'erreur
-	}
-
-    return sockfd;
-}
-
-
-
 /**
  * Creates a new socket bound at the given port
  * and sets the address to in6addr_any, which (by default) 

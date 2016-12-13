@@ -100,9 +100,6 @@ int st_tstart(st_ttask ttask){
         // listen/handle/reply
         printf("Wait\n");
         if (st_twork(ttask) == -1) return -1;
-
-        // TODO Probe          
-        printf("Probe\n");
     }
 
     return 0; 
@@ -487,7 +484,7 @@ int main(int argc, char* argv[]){
     
     uint16_t port = atoi(argv[1]);
 
-    st_ttask ttask = st_create_ttask(port, 100, 10);//TODO 60
+    st_ttask ttask = st_create_ttask(port, 100, 10);
     if (ttask == NULL) fail("st_create_ttask");
 
     if (st_tstart(ttask) == -1) fail("st_tstart");
