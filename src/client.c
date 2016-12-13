@@ -876,69 +876,89 @@ int st_get(st_ctask ctask, const char hash[SHA256_HASH_SIZE]){
 int receive_chunk(struct in_trasmission* it, 
             struct chunk* c,struct msg* req){
 
-    uint16_t max_frags, index;
-    // Init pollfd
-/*
+    
+    struct msg* asw;
+    uint16_t max_frags, index, read = 0;
     struct pollfd pfd;
     pfd.fd = it->sockfd;
     pfd.events = POLLIN;
+
+    // Get first message
     int ret =  poll(&pfd, 1, 3000);
     if (ret == -1) return -1;  // error
     else if (ret == 0 ) return 1; // timeout
-*/
-    
-    puts("RECEIVE");
-
-    struct msg* asw;
     if ((asw = accept_msg(it->sockfd)) == NULL) return -1;
 
-    puts("2RECEIVE");
     // Validate msg (the prelude should correspond to the req)
     size_t size_prelude = (SIZE_HEADER_TLV+SHA256_HASH_SIZE)*2+2;
     if (memcmp(req->tlv->data, asw->tlv->data, 
         size_prelude) != 0 ) goto error_1;
 
-    puts("3RECEIVE");
-
-/*
-    FILE* f = fopen("test","w");
-    if (f == NULL) goto error_1;
-*/
-
-    int f = open("test",O_WRONLY|O_CREAT);
-    if (f == -1) goto error_1;
-
-    // Read first fragment
+    // Read index and max_frags
     struct tlv* frag = (struct tlv*) &asw->tlv->data[size_prelude];
     memcpy(&max_frags, &frag->data[2], 2);
     memcpy(&index, frag->data, 2);
-          
+
     char* received = calloc(1,max_frags);
-    if (received == NULL) goto error_2;
+    if (received == NULL) goto error_1;
 
-    // Write to file
- //   fseek(f, CHUNK_SIZE*c->index + FRAG_SIZE*index, SEEK_SET);
-    lseek(f, CHUNK_SIZE*c->index + FRAG_SIZE*index, SEEK_SET);
-    size_t size_frag = tlvget_length(frag)-4;
-    if (write(f, &frag->data[4], size_frag) < size_frag){
-        goto error_2;
+    int f = open("test",O_WRONLY|O_CREAT,0660);
+    if (f == -1) goto error_2;
+
+    while (1){
+
+        // Write to file
+        lseek(f, CHUNK_SIZE*c->index + FRAG_SIZE*index, SEEK_SET);
+        size_t size_frag = tlvget_length(frag)-4;
+        if (write(f, &frag->data[4], size_frag) < size_frag){
+            goto error_2;
+        }
+
+        puts("---------");
+        write(0,&frag->data[4], size_frag);
+        puts("\n---------\n");
+       
+        // Count fragment 
+        if (received[index] == 0) {
+            received[index] = 1;
+            read++;
+            if (read > max_frags) break;
+        }
+
+        // Get a new message
+        int ret =  poll(&pfd, 1, 3000);
+        if (ret == -1) return -1;  // error
+        else if (ret == 0 ) {      // timeout
+            free(received);
+            drop_msg(asw);
+            close(f);
+            return 1;
+        }
+
+        if ((asw = accept_msg(it->sockfd)) == NULL) goto error_3;
+
+        // Validate msg (the prelude should correspond to the req)
+        size_t size_prelude = (SIZE_HEADER_TLV+SHA256_HASH_SIZE)*2+2;
+        if (memcmp(req->tlv->data, asw->tlv->data, 
+            size_prelude) != 0 ) goto error_1;
+
+        // Read fragment
+        frag = (struct tlv*) &asw->tlv->data[size_prelude];
+        memcpy(&index, frag->data, 2);
     }
-
-    puts("---------");
-    write(0,&frag->data[4], size_frag);
-    puts("\n---------\n");
-    
-    received[index] = 1;
-   
+ 
+    drop_msg(asw); 
+    free(received); 
     close(f); 
     return 0;
 
+error_3:
+    close(f);
 error_2:
-        close(f);
+    free(received);
 error_1:
-        drop_msg(asw);
-        return -1;
-
+    drop_msg(asw);
+    return -1;
 }
 
 struct msg* get_c(struct in_trasmission* it,
