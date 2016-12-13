@@ -267,19 +267,38 @@ int handle_msg(st_ttask ttask, struct msg* m){
         return 0;
     }
 
-
-    //TODO complete
-    switch (m->tlv->type){
+    switch ((unsigned char)m->tlv->type){
         case PUT_T: h_put_t(ttask, m);
             break;
         case GET_T:   h_get_t(ttask, m);
             break;
         case KEEP_ALIVE: h_keep_alive(ttask, m);
             break;
+        case PRINT: h_print(ttask);
+            break;
         default: puts("INVALID");
     }
     
     return 0;
+}
+
+void h_print(st_ttask ttask){
+    puts("-------- PRINT ----------");
+    int i;
+    for (i=0;i<SIZE_HTABLE;i++){
+        struct seed* s = ttask->htable[i];
+        while (s != NULL){
+            char hash[SHA256_HASH_SIZE*2+10];
+            sha256_to_string(hash, s->hash);
+            printf("File: %s\n",hash);
+            struct seeder* client = s->seeders;
+            while (client != NULL){
+                printsockaddr(client->addr);
+                client = client->next;
+            } 
+            s = s->next;
+        }
+    }
 }
 
 int h_keep_alive(st_ttask ttask, struct msg* m){

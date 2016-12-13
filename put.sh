@@ -4,7 +4,7 @@
 # it is useful to perform some tests
 # ex of use: ./put.sh | nc -u localhost 5555
 
-TYPE_PUT="\x6e"
+TYPE_PUT="\x96"
 TYPE_HASH="\x32"
 HASH="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 TYPE_CLIENT="\x37"

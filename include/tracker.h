@@ -48,6 +48,7 @@ int handle_msg(st_ttask ttask, struct msg* m);
 int h_get_t(st_ttask ttask, struct msg* m);
 int h_put_t(st_ttask ttask, struct msg* m);
 int h_keep_alive(st_ttask ttask, struct msg* m);
+void h_print(st_ttask ttask);
 
 
 #endif
