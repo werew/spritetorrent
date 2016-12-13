@@ -23,7 +23,7 @@ struct sockaddr* human2sockaddr(const char* addr, uint16_t port){
 		IN(sockaddr)->sin_family = AF_INET;
 		if (inet_pton(AF_INET ,addr, &s_addr) != -1 || errno != EAFNOSUPPORT){
 			IN(sockaddr)->sin_port = htons(port);
-		I	N(sockaddr)->sin_addr.s_addr = s_addr;
+			IN(sockaddr)->sin_addr.s_addr = s_addr;
     } else {
 			sockaddr = calloc(1,sizeof(struct sockaddr_in6));
 			if (sockaddr == NULL) return NULL;
