@@ -28,7 +28,7 @@
 // Size of the header of a tlv (type + length)
 #define SIZE_HEADER_TLV 3
 // Max size of the length of a struct tlv
-#define MAX_LEN_TLV 1028
+#define MAX_LEN_TLV 1028*10
 
 #define RED     "\x1b[31m"
 #define GREEN   "\x1b[32m"

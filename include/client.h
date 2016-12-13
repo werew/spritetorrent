@@ -89,9 +89,12 @@ ssize_t chunks2chunklist (struct chunk* c, void** dest);
 int rep_list(struct ctask* ctask, struct msg* m);
 int rep_get(struct ctask* ctask, struct msg* m);
 struct c_seed* search_hash_c(struct c_seed* list, const char* hash);
-int get_c(struct in_trasmission* it, struct chunk* c,struct host* h);
+struct msg* get_c(struct in_trasmission* it,
+                  struct chunk* c, struct host* h);
 int handle_rep_list(struct in_trasmission* it, struct msg* m);
 
 int transmit_chunk(struct ctask* ctask, struct msg* m,
     struct c_seed* seed, struct chunk* c);
+int receive_chunk(struct in_trasmission* it, 
+            struct chunk* c,struct msg* req);
 #endif

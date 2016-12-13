@@ -110,6 +110,7 @@ int st_cwork(st_ctask ctask){
         printf("Accept\n");
         if ((m = accept_msg(ctask->sockfd)) == NULL) return -1;
                 
+        printsockaddr((struct sockaddr*) &m->addr);
         if (handle_msg(ctask, m) == -1) return -1;
     }
 
@@ -145,6 +146,7 @@ int ka_gen(st_ctask ctask){
 int handle_msg(st_ctask ctask, struct msg* m){
     puts("Handle msg");
 
+    printsockaddr((struct sockaddr*) &m->addr);
     switch (m->tlv->type){
         case GET_C: puts("received GET_C: new transmission");
                     rep_get(ctask,m);
@@ -195,6 +197,7 @@ int rep_get(struct ctask* ctask, struct msg* m){
 
 
 
+    printsockaddr((struct sockaddr*) &m->addr);
     transmit_chunk(ctask, m, s, c);
 
     
@@ -249,12 +252,17 @@ int transmit_chunk(struct ctask* ctask, struct msg* m,
         asw->size = fixedlength + frag_size;
         memcpy(frag->data, &index, 2);
 
-        if (fread(&frag->data[4], 1, frag_size, file) != frag_size ||
-            send_msg(ctask->sockfd, asw) ){
+        fread(&frag->data[4], 1, frag_size, file); //!= frag_size
+        puts("---------ABOUT TO SEND --------");
+        write(0,&frag->data[4],frag_size);
+        puts("\n--------------END--------------");
+        sleep(1);
+            send_msg(ctask->sockfd, asw);/* == -1){
             drop_msg(asw);
             fclose(file);
             return -1;
         }
+*/
         
         printf(CYAN"---> Fragment %d of %d. Size %ld\n"CRESET,
                    index, max_frags, frag_size);
@@ -853,7 +861,9 @@ int st_get(st_ctask ctask, const char hash[SHA256_HASH_SIZE]){
     // Get chunks
     struct chunk* c = it.chunks;
     while (c != NULL){
-        get_c(&it, c, it.seeders);
+        struct msg* req = get_c(&it, c, it.seeders);
+        if (req == NULL) return -1;
+        receive_chunk(&it, c, req);
         c = c->next;
     }
 
@@ -861,7 +871,78 @@ int st_get(st_ctask ctask, const char hash[SHA256_HASH_SIZE]){
 }
 
 
-int get_c(struct in_trasmission* it, struct chunk* c,struct host* h){
+
+
+int receive_chunk(struct in_trasmission* it, 
+            struct chunk* c,struct msg* req){
+
+    uint16_t max_frags, index;
+    // Init pollfd
+/*
+    struct pollfd pfd;
+    pfd.fd = it->sockfd;
+    pfd.events = POLLIN;
+    int ret =  poll(&pfd, 1, 3000);
+    if (ret == -1) return -1;  // error
+    else if (ret == 0 ) return 1; // timeout
+*/
+    
+    puts("RECEIVE");
+
+    struct msg* asw;
+    if ((asw = accept_msg(it->sockfd)) == NULL) return -1;
+
+    puts("2RECEIVE");
+    // Validate msg (the prelude should correspond to the req)
+    size_t size_prelude = (SIZE_HEADER_TLV+SHA256_HASH_SIZE)*2+2;
+    if (memcmp(req->tlv->data, asw->tlv->data, 
+        size_prelude) != 0 ) goto error_1;
+
+    puts("3RECEIVE");
+
+/*
+    FILE* f = fopen("test","w");
+    if (f == NULL) goto error_1;
+*/
+
+    int f = open("test",O_WRONLY|O_CREAT);
+    if (f == -1) goto error_1;
+
+    // Read first fragment
+    struct tlv* frag = (struct tlv*) &asw->tlv->data[size_prelude];
+    memcpy(&max_frags, &frag->data[2], 2);
+    memcpy(&index, frag->data, 2);
+          
+    char* received = calloc(1,max_frags);
+    if (received == NULL) goto error_2;
+
+    // Write to file
+ //   fseek(f, CHUNK_SIZE*c->index + FRAG_SIZE*index, SEEK_SET);
+    lseek(f, CHUNK_SIZE*c->index + FRAG_SIZE*index, SEEK_SET);
+    size_t size_frag = tlvget_length(frag)-4;
+    if (write(f, &frag->data[4], size_frag) < size_frag){
+        goto error_2;
+    }
+
+    puts("---------");
+    write(0,&frag->data[4], size_frag);
+    puts("\n---------\n");
+    
+    received[index] = 1;
+   
+    close(f); 
+    return 0;
+
+error_2:
+        close(f);
+error_1:
+        drop_msg(asw);
+        return -1;
+
+}
+
+struct msg* get_c(struct in_trasmission* it,
+                  struct chunk* c,struct host* h){
 
     
     // LOG
@@ -873,7 +954,7 @@ int get_c(struct in_trasmission* it, struct chunk* c,struct host* h){
     // Craft GET_C
     struct msg* m = create_msg(SIZE_HEADER_TLV*2+
                     SHA256_HASH_SIZE*2+2,h->addr);
-    if (m == NULL) return -1;
+    if (m == NULL) return NULL;
 
     m->tlv->type = GET_C;
     struct tlv* hash = (struct tlv*) m->tlv->data;
@@ -890,12 +971,11 @@ int get_c(struct in_trasmission* it, struct chunk* c,struct host* h){
     // Send GET_C msg
     if (send_msg(it->sockfd, m) == -1){
         drop_msg(m);
-        return -1;
+        return NULL;
     }
     
         
-    drop_msg(m);
-    return 0;
+    return m;
 }
 
 

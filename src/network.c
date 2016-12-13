@@ -48,7 +48,7 @@ struct sockaddr* human2sockaddr(const char* addr, uint16_t port){
  */
 struct msg* accept_msg(int sockfd){
 
-    struct msg* m = malloc(sizeof (struct msg)); 
+    struct msg* m = calloc(1,sizeof (struct msg)); 
     if (m == NULL) return NULL;
 
     m->tlv = create_tlv(MAX_LEN_TLV); 
@@ -56,7 +56,7 @@ struct msg* accept_msg(int sockfd){
 
 
     // Receive a message
-    m->addrlen = sizeof m->addrlen;
+    m->addrlen = sizeof(struct sockaddr_storage);
     m->size = recvfrom(sockfd, m->tlv, MAX_LEN_TLV, 0, 
                    (struct sockaddr*) &(m->addr),
                    &(m->addrlen));
