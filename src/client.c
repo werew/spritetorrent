@@ -838,7 +838,8 @@ int handle_rep_list(struct in_trasmission* it, struct msg* m){
 
 
 
-int st_get(st_ctask ctask, const char hash[SHA256_HASH_SIZE]){
+int st_get(st_ctask ctask, 
+const char hash[SHA256_HASH_SIZE], char* filename){
     // Init trasmission
     struct in_trasmission it;
     memset(&it,0,sizeof(struct in_trasmission));
@@ -857,13 +858,16 @@ int st_get(st_ctask ctask, const char hash[SHA256_HASH_SIZE]){
 
     // Get chunks
     list(&it);
-
-    // Get chunks
     struct chunk* c = it.chunks;
     while (c != NULL){
-        struct msg* req = get_c(&it, c, it.seeders);
-        if (req == NULL) return -1;
-        receive_chunk(&it, c, req);
+        int tries = 0;
+        while (tries < 3){ 
+            struct msg* req = get_c(&it, c, it.seeders);
+            if (req == NULL) return -1;
+            int ret = receive_chunk(&it, c, req, filename);
+            if (ret == 0) break;
+            else if (ret == 1) tries++;
+        }
         c = c->next;
     }
 
@@ -874,7 +878,7 @@ int st_get(st_ctask ctask, const char hash[SHA256_HASH_SIZE]){
 
 
 int receive_chunk(struct in_trasmission* it, 
-            struct chunk* c,struct msg* req){
+    struct chunk* c, struct msg* req, char* filename){
 
     
     struct msg* asw;
@@ -902,7 +906,7 @@ int receive_chunk(struct in_trasmission* it,
     char* received = calloc(1,max_frags);
     if (received == NULL) goto error_1;
 
-    int f = open("test",O_WRONLY|O_CREAT,0660);
+    int f = open(filename,O_WRONLY|O_CREAT,0660);
     if (f == -1) goto error_2;
 
     while (1){
@@ -1070,7 +1074,7 @@ int main(int argc, char* argv[]){
 
 
     // Option pointers
-    char* get[10];        int iget = 0;
+    char* get[10][2];     int iget = 0;
     char* put[10];        int iput = 0;
     char* local[10];      int iloc   = 0;
     char* track[10][2];   int itrack = 0;
@@ -1087,7 +1091,8 @@ int main(int argc, char* argv[]){
         switch (opt){
             case 'h': usage(argv[0], 0, 1);
                 break;
-            case 'g': get[iget++]     = optarg;
+            case 'g': get[iget][0]    = optarg;
+                      get[iget++][1]  = argv[optind];
                 break ;
             case 'p': put[iput++]     = optarg;
                 break ;
@@ -1124,8 +1129,8 @@ int main(int argc, char* argv[]){
     for (i = 0; i < 10; i++){
         if (i < iget) {
             unsigned char hash[SHA256_HASH_SIZE];
-            string_to_sha256(hash, get[i]);
-            st_get(ctask, (char*) hash);
+            string_to_sha256(hash, get[i][0]);
+            st_get(ctask, (char*) hash, get[i][1]);
         }
         if (i < iput) {
             st_put(ctask, put[i]);

@@ -437,7 +437,14 @@ void fail(const char* emsg){
 
 int main(int argc, char* argv[]){
 
-    st_ttask ttask = st_create_ttask(5555, 10, 10);
+    if (argc < 2){
+        fprintf(stderr, "usage: %s <port>\n",argv[0]);
+        exit(EXIT_FAILURE);
+    }
+    
+    uint16_t port = atoi(argv[1]);
+
+    st_ttask ttask = st_create_ttask(port, 100, 10);//TODO 60
     if (ttask == NULL) fail("st_create_ttask");
 
     if (st_tstart(ttask) == -1) fail("st_tstart");

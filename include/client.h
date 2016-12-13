@@ -96,5 +96,7 @@ int handle_rep_list(struct in_trasmission* it, struct msg* m);
 int transmit_chunk(struct ctask* ctask, struct msg* m,
     struct c_seed* seed, struct chunk* c);
 int receive_chunk(struct in_trasmission* it, 
-            struct chunk* c,struct msg* req);
+    struct chunk* c, struct msg* req, char* filename);
+int st_get(st_ctask ctask, 
+const char hash[SHA256_HASH_SIZE], char* filename);
 #endif
