@@ -1110,7 +1110,6 @@ int main(int argc, char* argv[]){
         if (iget > 10 || iput > 10 || iloc > 10 || itrack > 10){
             fprintf(stderr, "Way too many options\n");
         }
-        printf("%d %c %s\n",optind, opt, argv[optind]);
 
         switch (opt){
             case 'h': usage(argv[0], 0, 1);
