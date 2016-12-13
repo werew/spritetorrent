@@ -58,17 +58,22 @@ int st_cstart(st_ctask ctask){
     ctask->lastupdate = time(NULL); 
     if (ctask->lastupdate == -1) return -1;
 
+    
     // Main work/update loop 
+    int ka_switch = 1;
     while(1){
         
         // listen/handle/reply
         if (st_cwork(ctask) == -1) return -1;
-        
-        // Forge KAs
-        ka_gen(ctask);
 
         // Update poll
         poll_runupdate(ctask);
+
+        // Forge KAs
+        if (ka_switch == 0){
+            ka_gen(ctask);
+            ka_switch = 1;
+        } else ka_switch = 0;
 
     }
 
