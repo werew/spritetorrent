@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <string.h>
 #include <time.h>
 #include "types.h"
@@ -149,6 +150,7 @@ int handle_msg(st_ctask ctask, struct msg* m){
             break;
 
         case LIST: puts("rceived LIST");
+                   rep_list(ctask, m);
             break;
 
         case ACK_PUT: 
@@ -181,10 +183,15 @@ int rep_list(struct ctask* ctask, struct msg* m){
 
     // Get file hash
     struct tlv* hash = (struct tlv*) m->tlv->data;
-    if (hash->type == FILE_HASH) return -1;
+    if (hash->type != FILE_HASH) return -1;
+
+        // Log
+        char shash[SHA256_HASH_SIZE*2];
+        sha256_to_string(shash,hash->data);
+        printf(YELLOW"\t %s\n"CRESET, shash);
 
     // Search into the htable 
-    int idx = htable_index(m->tlv->data, SHA256_HASH_SIZE);
+    int idx = htable_index(hash->data, SHA256_HASH_SIZE);
     struct c_seed* s = search_hash_c(ctask->htable[idx],hash->data);
     if (s == NULL) return -1;
     
@@ -219,9 +226,8 @@ ssize_t chunks2chunklist (struct chunk* c, void** dest){
     void* mem = malloc(mem_size);
     if (mem == NULL) return -1;
 
-    struct tlv* hash= NULL;
+    struct tlv* hash= create_tlv(SHA256_HASH_SIZE+2);
     hash->type = CHUNK_HASH;
-    tlvset_length(hash, SHA256_HASH_SIZE+2);
     size_t size_chunk = SIZE_HEADER_TLV+SHA256_HASH_SIZE+2;
 
     while (c != NULL){
@@ -330,6 +336,19 @@ int send_req(st_ctask ctask, struct request* req){
     if (t == -1 || send_msg(ctask->sockfd, req->msg) == -1) return -1;
     req->timestamp = t;
     req->attempts++;
+
+    // Log
+    char addr[100];
+    if (req->msg->addr.ss_family == AF_INET){
+        inet_ntop(AF_INET, &IN(&req->msg->addr)->sin_addr, 
+                  addr, 100);
+    } else {
+        inet_ntop(AF_INET6, &IN6(&req->msg->addr)->sin6_addr, 
+                  addr, 100);
+    }
+    printf(CYAN"Sent %d to %s : %d attempts\n"CRESET,
+           req->msg->tlv->type, addr, req->attempts);
+
     return 0;
 }
 
@@ -426,7 +445,10 @@ struct chunk* make_chunkslist(const char* filename){
         if (fsha256(chunk->hash, f, 
             CHUNK_SIZE*index, CHUNK_SIZE) == -1) return NULL; // XXX
 
-        printhash(chunk->hash);
+        // Log
+        char hash[SHA256_HASH_SIZE*2];
+        sha256_to_string(hash,chunk->hash);
+        printf(YELLOW"\t  chunk%d: %s\n"CRESET, index, hash);
 
         chunk->index = index++; 
         chunk->status = AVAILABLE;
@@ -466,12 +488,19 @@ int st_put(st_ctask ctask, const char* filename){
     s->filename = strdup(filename);
     if (s->filename == NULL) goto err_1;
 
+    // Log
+    char hash[SHA256_HASH_SIZE*2];
+    sha256_to_string(hash,s->hash);
+    printf(YELLOW"PUT file \"%s\"\n\tFILEHASH: %s\n"CRESET,
+          filename , hash);
+
     // Chunks
     s->chunks = make_chunkslist(filename);
     if (s->filename == NULL) goto err_2;
 
     // Push into htable
     unsigned int hti = htable_index(s->hash,SHA256_HASH_SIZE);
+    printf("INDEX %d\n",hti);
     s->next = ctask->htable[hti];
     ctask->htable[hti] = s;
 
@@ -585,7 +614,6 @@ int get_t(struct sockaddr* tracker, struct in_trasmission* it){
         else if (ret == 0 ) continue; // timeout
 
         // A message has arrived
-        printf("---> Accept ACK GET\n");
         if ((answer = accept_msg(it->sockfd)) == NULL) return -1;
 
         ret = handle_ack_get(it, answer);
@@ -616,13 +644,24 @@ int list(struct in_trasmission* it){
     hash->type = FILE_HASH;
     memcpy(hash->data, it->hash, SHA256_HASH_SIZE);
 
+    // Log
+    char addr[100];
+    if (m->addr.ss_family == AF_INET){
+        inet_ntop(AF_INET, &IN(&m->addr)->sin_addr, 
+                  addr, 100);
+    } else {
+        inet_ntop(AF_INET6, &IN6(&m->addr)->sin6_addr, 
+                  addr, 100);
+    }
+    printf(YELLOW"\tTry seeder %s\n"CRESET,addr);
+
+
     // Send LIST msg
     if (send_msg(it->sockfd, m) == -1){
         drop_msg(m);
         return -1;
     }
     
-
     // Handle answer
     struct msg* answer = accept_msg(it->sockfd);
     if (answer ==  NULL) return -1;
@@ -635,10 +674,15 @@ int list(struct in_trasmission* it){
 int st_get(st_ctask ctask, const char hash[SHA256_HASH_SIZE]){
     // Init trasmission
     struct in_trasmission it;
+    memset(&it,0,sizeof(struct in_trasmission));
     it.sockfd = bound_socket(0); 
     if (it.sockfd == -1) return -1;
-
     memcpy(it.hash,hash,SHA256_HASH_SIZE);
+
+    // Log
+    char shash[SHA256_HASH_SIZE*2];
+    sha256_to_string(shash,hash);
+    printf(YELLOW"GET: %s\n"CRESET, shash);
 
     // Get clients
     struct host* tracker = ctask->trackers; // XXX use all
@@ -670,6 +714,7 @@ int st_addtracker(st_ctask ctask, const char* addr, uint16_t port){
     tracker->next = ctask->trackers;
     ctask->trackers = tracker;
 
+    printf(CYAN"Using tracker: %s %d\n"CRESET,addr, port);
     return 0; 
 }
 
@@ -688,26 +733,103 @@ int st_addlocal(st_ctask ctask, const char* addr, uint16_t port){
     localaddr->addr = sockaddr;
     localaddr->next = ctask->locals;
     ctask->locals = localaddr;
+
+    printf(CYAN"Declare local addr: %s %d\n"CRESET,addr, port);
     return 0; 
+}
+
+
+/**
+ * Prints some information about the usage of the program
+ * @param name Name of the executable
+ * @param exit_value Exit value of the program
+ * @param help Print of not the help
+ */
+void usage(const char* name, int exit_value, int help){
+    printf("usage: %s [-h] [-g hash] [-p file] [-l localaddr]"
+           "[-t trackeraddr port] <port>\n",name);
+    if (help == 1) {
+        printf( "\n"
+                "-h                     Shows this help\n"
+                "-g hash                Get a file     \n"
+                "-p file                Put a file     \n"
+                "-l localaddr           Declare local addr\n"
+                "-t trackeraddr port    Add a tracker  \n"
+                "\n"
+        );
+    }
+        
+    exit(exit_value);
 }
 
 
 int main(int argc, char* argv[]){
 
-    st_ctask ctask = st_create_ctask(2222, 10);
+
+    // Option pointers
+    char* get[10];        int iget = 0;
+    char* put[10];        int iput = 0;
+    char* local[10];      int iloc   = 0;
+    char* track[10][2];   int itrack = 0;
+
+    // Get options
+    int opt;
+    while ((opt = getopt (argc, argv, "hg:p:l:t:")) != -1){
+
+        if (iget > 10 || iput > 10 || iloc > 10 || itrack > 10){
+            fprintf(stderr, "Way too many options\n");
+        }
+        printf("%d %c %s\n",optind, opt, argv[optind]);
+
+        switch (opt){
+            case 'h': usage(argv[0], 0, 1);
+                break;
+            case 'g': get[iget++]     = optarg;
+                break ;
+            case 'p': put[iput++]     = optarg;
+                break ;
+            case 'l': local[iloc++]   = optarg;
+                break ;
+            case 't': track[itrack][0] = optarg;
+                      track[itrack++][1] = argv[optind];
+                break ;
+            default: usage(argv[0], 1, 0);
+        }
+    }
+
+    if (argc - optind < 1) usage(argv[0], 1, 0);
+    
+    uint16_t port = atoi(argv[optind+1]);
+
+    st_ctask ctask = st_create_ctask(port, 10);
     if (ctask == NULL) fail("st_create_ctask");
 
-    st_addtracker(ctask,"127.0.0.1",5555);
-    st_addlocal(ctask,"127.0.0.1",2222);
+    // Add local addr
+    while (iloc-- > 0) {
+        st_addlocal(ctask,local[iloc],port);
+    }
+    
+    // Add trackers
+    while (itrack-- > 0) {
+        st_addtracker(ctask,track[itrack][0],
+                atoi(track[itrack][1]));
+    }
 
-    st_put(ctask, "/etc/passwd");
 
-    char hash[SHA256_HASH_SIZE];
-    string_to_sha256((unsigned char*) hash,
-"0d3e2e56a2d3cd9ed109d842d9e4aed3df34465c3bc38f59da6cdb18a7121d32");
+    // Get and push files
+    int i;
+    for (i = 0; i < 10; i++){
+        if (i < iget) {
+            unsigned char hash[SHA256_HASH_SIZE];
+            string_to_sha256(hash, get[i]);
+            st_get(ctask, (char*) hash);
+        }
+        if (i < iput) {
+            st_put(ctask, put[i]);
+        }
+    }
 
-    st_get(ctask, hash);
-
+    // Main worker
     st_cstart(ctask);
 
     return 0;
