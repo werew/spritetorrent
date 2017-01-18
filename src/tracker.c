@@ -474,7 +474,7 @@ int main(int argc, char* argv[]){
     
     uint16_t port = atoi(argv[1]);
 
-    st_ttask ttask = st_create_ttask(port, 100, 10);
+    st_ttask ttask = st_create_ttask(port, 100, 22);
     if (ttask == NULL) fail("st_create_ttask");
 
     if (st_tstart(ttask) == -1) fail("st_tstart");

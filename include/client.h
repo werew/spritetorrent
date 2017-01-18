@@ -70,18 +70,22 @@ struct in_trasmission {
 
 
 st_ctask st_create_ctask(uint16_t port, time_t timeout);
-
+int st_addtracker(st_ctask ctask, const char* addr, uint16_t port);
+int st_addlocal(st_ctask ctask, const char* addr, uint16_t port);
+int st_put(st_ctask ctask, const char* filename);
+int st_get(st_ctask ctask, 
+const char hash[SHA256_HASH_SIZE], char* filename);
 int st_cstart(st_ctask ctask);
-int st_cwork(st_ctask ctask);
 
+
+
+int st_cwork(st_ctask ctask);
 int ka_gen(st_ctask ctask);
 int poll_runupdate(st_ctask ctask);
 int handle_msg(st_ctask ctask, struct msg* m);
 void rm_answered(st_ctask ctask, struct msg* m);
-int st_addtracker(st_ctask ctask, const char* addr, uint16_t port);
 
 
-int st_put(st_ctask ctask, const char* filename);
 int _put_t(st_ctask ctask, const struct sockaddr* tracker, 
            const char* hash, struct sockaddr* local);
 int send_req(st_ctask ctask, struct request* req);
@@ -98,8 +102,6 @@ int transmit_chunk(struct ctask* ctask, struct msg* m,
     struct c_seed* seed, struct chunk* c);
 int receive_chunk(struct in_trasmission* it, 
     struct chunk* c, struct msg* req, char* filename);
-int st_get(st_ctask ctask, 
-const char hash[SHA256_HASH_SIZE], char* filename);
 void push_req(st_ctask ctask, struct request* req);
 
 #endif
